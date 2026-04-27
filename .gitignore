@@ -1,0 +1,62 @@
+# ─── Node.js ──────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# ─── Environnement & Identifiants (CRITIQUE : PROTÉGER ABSOLUMENT) ────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ─── Fichiers sensibles / données personnelles ────────────────────────────────
+# Le fichier PDF contient CV + lettre de recommandation (données personnelles)
+CV_LETTRE_DE_RECOMMANDATION.pdf
+
+# Fichier Excel contenant les contacts (données personnelles des destinataires)
+Tableau\ contact.xlsx
+Tableau Contact.xlsx
+*.xlsx
+*.xls
+
+# ─── Système (macOS) ─────────────────────────────────────────────────────────**
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ─── IDE / Éditeurs ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.settings/
+.project
+.classpath
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+# Le PDF est monté via volume dans docker-compose.yml, pas besoin dans l'image
+
+# ─── Fichiers temporaires ─────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+
+# ─── OS generated files ──────────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+.DS_Store

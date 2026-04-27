@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mailcandid:
+    build: .
+    container_name: mailcandid-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Les variables ci-dessous sont lues depuis le fichier .env
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - ZIMBRA_URL=${ZIMBRA_URL}
+      - PORT=3000
+    volumes:
+      # Monte le PDF depuis la machine locale (pour ne pas l'inclure dans l'image)
+      - ./CV_LETTRE_DE_RECOMMANDATION.pdf:/app/CV_LETTRE_DE_RECOMMANDATION.pdf:ro
+    restart: unless-stopped
