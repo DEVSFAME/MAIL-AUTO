@@ -1,623 +1,758 @@
 /* ═══════════════════════════════════════════════════════════════════════════════
-   MailCandid — Frontend Logic
+   MailCandid — App Logic (Auth + Contacts + Documents + Envoi)
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-'use strict';
+(function () {
+  'use strict';
 
-// ─── URL du backend (définie dans config.js, pointe vers ngrok ou localhost) ──
-// Supprime le slash final s'il y en a un, pour éviter les doubles slashes
-const API = (window.API_BASE_URL || '').replace(/\/$/, '');
+  // ─── Configuration ──────────────────────────────────────────────────────────
+  const API = window.API_BASE_URL || '';
+  const DEFAULT_USER_NAME = 'Anika Mohammad';
 
-// En-têtes communs pour toutes les requêtes fetch (ngrok nécessite ce header)
-const FETCH_HEADERS = {
-  'ngrok-skip-browser-warning': 'true',
-};
+  // ─── State ──────────────────────────────────────────────────────────────────
+  let contacts        = [];
+  let currentUser     = null;
+  let currentFilter   = 'all';
+  let currentContact  = null;
+  let editing         = false;
+  let documents       = [];
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let allContacts = [];
-let currentFilter = 'all';
-let currentContactId = null;
-let isEditing = false;
+  // ─── DOM refs ───────────────────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
 
-// ─── DOM References ───────────────────────────────────────────────────────────
-const uploadSection   = document.getElementById('uploadSection');
-const contactsSection = document.getElementById('contactsSection');
-const dropZone        = document.getElementById('dropZone');
-const fileInput       = document.getElementById('fileInput');
-const browseBtn       = document.getElementById('browseBtn');
-const uploadProgress  = document.getElementById('uploadProgress');
-const contactsGrid    = document.getElementById('contactsGrid');
-const emptyState      = document.getElementById('emptyState');
-const searchInput     = document.getElementById('searchInput');
-const resetBtn        = document.getElementById('resetBtn');
-const sendAllBtn      = document.getElementById('sendAllBtn');
-const filterTabs      = document.querySelectorAll('.filter-tab');
-const headerStats     = document.getElementById('headerStats');
+  const loginSection      = $('loginSection');
+  const appSection        = $('appSection');
+  const googleLoginBtn    = $('googleLoginBtn');
+  const zimbraLoginBtn    = $('zimbraLoginBtn');
+  const logoutBtn         = $('logoutBtn');
+  const userAvatar        = $('userAvatar');
+  const userName          = $('userName');
+  const headerStats       = $('headerStats');
+  const pendingCount      = $('pendingCount');
+  const sentCount         = $('sentCount');
+  const totalCount        = $('totalCount');
+  const dropZone          = $('dropZone');
+  const browseBtn         = $('browseBtn');
+  const fileInput         = $('fileInput');
+  const uploadProgress    = $('uploadProgress');
+  const contactsSection   = $('contactsSection');
+  const contactsGrid      = $('contactsGrid');
+  const emptyState        = $('emptyState');
+  const searchInput       = $('searchInput');
+  const sendAllBtn        = $('sendAllBtn');
+  const resetBtn          = $('resetBtn');
+  const filterTabs        = document.querySelectorAll('.filter-tab');
 
-// Modal elements
-const modalOverlay    = document.getElementById('modalOverlay');
-const mailSubject     = document.getElementById('mailSubject');
-const mailBody        = document.getElementById('mailBody');
-const modalAvatar     = document.getElementById('modalAvatar');
-const modalContactName = document.getElementById('modalContactName');
-const modalStructure  = document.getElementById('modalStructure');
-const modalLocation   = document.getElementById('modalLocation');
-const modalEmailLink  = document.getElementById('modalEmailLink');
-const modalResearchTag = document.getElementById('modalResearchTag');
-const modalCloseBtn   = document.getElementById('modalCloseBtn');
-const btnSend         = document.getElementById('btnSend');
-const btnEdit         = document.getElementById('btnEdit');
-const btnCancel       = document.getElementById('btnCancel');
-const btnDelete       = document.getElementById('btnDelete');
+  // Modal
+  const modalOverlay      = $('modalOverlay');
+  const modalAvatar       = $('modalAvatar');
+  const modalContactName  = $('modalContactName');
+  const modalStructure    = $('modalStructure');
+  const modalLocation     = $('modalLocation');
+  const modalEmailLink    = $('modalEmailLink');
+  const modalResearchTag  = $('modalResearchTag');
+  const mailSubject       = $('mailSubject');
+  const mailBody          = $('mailBody');
+  const btnDelete         = $('btnDelete');
+  const btnCancel         = $('btnCancel');
+  const btnEdit           = $('btnEdit');
+  const btnSend           = $('btnSend');
+  const modalCloseBtn     = $('modalCloseBtn');
 
-// Send All Modal
-const sendAllOverlay  = document.getElementById('sendAllOverlay');
-const sendAllText     = document.getElementById('sendAllText');
-const sendAllProgress = document.getElementById('sendAllProgress');
-const sendAllContent  = document.getElementById('sendAllContent');
-const sendAllFooter   = document.getElementById('sendAllFooter');
-const progressFill    = document.getElementById('progressFill');
-const progressLabel   = document.getElementById('progressLabel');
-const sendAllConfirmBtn = document.getElementById('sendAllConfirmBtn');
-const sendAllCancelBtn  = document.getElementById('sendAllCancelBtn');
-const sendAllCloseBtn   = document.getElementById('sendAllCloseBtn');
+  // Documents
+  const documentsList     = $('documentsList');
+  const docUploadBtn      = $('docUploadBtn');
+  const docFileInput      = $('docFileInput');
+  const docCount          = $('docCount');
 
-// Toast container
-const toastContainer  = document.getElementById('toastContainer');
+  // Send All Modal
+  const sendAllOverlay    = $('sendAllOverlay');
+  const sendAllCloseBtn   = $('sendAllCloseBtn');
+  const sendAllText       = $('sendAllText');
+  const sendAllProgress   = $('sendAllProgress');
+  const sendAllContent    = $('sendAllContent');
+  const progressFill      = $('progressFill');
+  const progressLabel     = $('progressLabel');
+  const sendAllCancelBtn  = $('sendAllCancelBtn');
+  const sendAllConfirmBtn = $('sendAllConfirmBtn');
 
-// ═══════════════════════════════════ UPLOAD ═══════════════════════════════════
+  // Toast
+  const toastContainer    = $('toastContainer');
 
-// Click sur le bouton "Parcourir"
-browseBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  fileInput.click();
-});
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  UTILS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-// Click sur la zone de drop
-dropZone.addEventListener('click', () => fileInput.click());
-
-// Sélection via input
-fileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) handleFile(file);
-  fileInput.value = '';
-});
-
-// Drag & Drop
-dropZone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropZone.classList.add('drag-over');
-});
-
-dropZone.addEventListener('dragleave', (e) => {
-  if (!dropZone.contains(e.relatedTarget)) {
-    dropZone.classList.remove('drag-over');
-  }
-});
-
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) handleFile(file);
-});
-
-// Prévenir drop sur le reste de la page
-document.addEventListener('dragover', (e) => e.preventDefault());
-document.addEventListener('drop', (e) => e.preventDefault());
-
-async function handleFile(file) {
-  const validTypes = [
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel'
-  ];
-
-  if (!file.name.match(/\.(xlsx|xls)$/i)) {
-    showToast('Format invalide. Veuillez utiliser un fichier .xlsx ou .xls', 'error');
-    return;
+  function getInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   }
 
-  // Afficher le spinner
-  uploadProgress.classList.add('visible');
-  browseBtn.disabled = true;
+  function truncate(str, len = 50) {
+    if (!str) return '';
+    return str.length > len ? str.slice(0, len) + '…' : str;
+  }
 
-  const formData = new FormData();
-  formData.append('file', file);
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 86400000) return 'Aujourd\'hui';
+    if (diff < 172800000) return 'Hier';
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  }
 
-  try {
-    const res = await fetch(`${API}/api/upload`, {
-      method: 'POST',
-      headers: FETCH_HEADERS,
-      body: formData,
+  function formatSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / 1048576).toFixed(1) + ' Mo';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  TOASTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function showToast(message, type = 'info', duration = 4000) {
+    const icons = {
+      success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+      error:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
+      info:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
+      warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+    };
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <div class="toast-icon">${icons[type] || icons.info}</div>
+      <span class="toast-msg">${message}</span>
+    `;
+    toastContainer.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
     });
 
-    // Vérification du type de réponse pour éviter l'erreur "Unexpected token '<'"
-    if (!res.headers.get('content-type')?.includes('application/json')) {
-      throw new Error('Réponse serveur invalide (HTML au lieu de JSON). Vérifiez que le backend Docker est démarré et que ngrok est actif.');
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.classList.add('hide');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  API HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function api(path, options = {}) {
+    const url = `${API}${path}`;
+    const res = await fetch(url, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      ...options,
+    });
+    if (!res.ok) {
+      let err;
+      try { err = await res.json(); } catch { err = { error: res.statusText }; }
+      throw new Error(err.error || `Erreur ${res.status}`);
     }
-
-    const data = await res.json();
-
-    if (!data.success) throw new Error(data.error || 'Erreur lors du parsing');
-
-    allContacts = data.contacts;
-    showToast(`✅ ${allContacts.length} contacts importés avec succès`, 'success');
-    showContactsSection();
-  } catch (err) {
-    console.error('Erreur handleFile:', err);
-    showToast('Erreur : ' + err.message, 'error');
-  } finally {
-    uploadProgress.classList.remove('visible');
-    browseBtn.disabled = false;
-  }
-}
-
-// ═══════════════════════════════════ SECTIONS ══════════════════════════════════
-
-function showContactsSection() {
-  uploadSection.style.display = 'none';
-  contactsSection.style.display = 'block';
-  headerStats.style.display = 'flex';
-  renderContacts();
-  updateStats();
-}
-
-function showUploadSection() {
-  contactsSection.style.display = 'none';
-  uploadSection.style.display = 'flex';
-  headerStats.style.display = 'none';
-  allContacts = [];
-  currentFilter = 'all';
-  filterTabs.forEach(t => t.classList.toggle('active', t.dataset.filter === 'all'));
-  searchInput.value = '';
-}
-
-resetBtn.addEventListener('click', showUploadSection);
-
-// ═══════════════════════════════════ FILTER & SEARCH ══════════════════════════
-
-filterTabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    filterTabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentFilter = tab.dataset.filter;
-    renderContacts();
-  });
-});
-
-searchInput.addEventListener('input', renderContacts);
-
-// ═══════════════════════════════════ RENDER CONTACTS ═══════════════════════════
-
-function getFilteredContacts() {
-  const query = searchInput.value.toLowerCase().trim();
-  return allContacts.filter(c => {
-    if (c.status === 'deleted') return false;
-    if (currentFilter !== 'all' && c.status !== currentFilter) return false;
-    if (!query) return true;
-    return (
-      c.name.toLowerCase().includes(query) ||
-      c.structure.toLowerCase().includes(query) ||
-      c.email.toLowerCase().includes(query) ||
-      c.research.toLowerCase().includes(query) ||
-      c.location.toLowerCase().includes(query)
-    );
-  });
-}
-
-function renderContacts() {
-  const contacts = getFilteredContacts();
-  contactsGrid.innerHTML = '';
-
-  if (contacts.length === 0) {
-    emptyState.style.display = 'flex';
-    return;
-  }
-  emptyState.style.display = 'none';
-
-  contacts.forEach(contact => {
-    const card = createContactCard(contact);
-    contactsGrid.appendChild(card);
-  });
-}
-
-function createContactCard(contact) {
-  const initials = getInitials(contact.name);
-  const card = document.createElement('div');
-  card.className = `contact-card status-${contact.status}`;
-  card.dataset.id = contact.id;
-
-  card.innerHTML = `
-    <div class="card-header-row">
-      <div class="card-avatar">${initials}</div>
-      <div class="card-info">
-        <div class="card-name">${escHtml(contact.name)}</div>
-        <div class="card-structure">${escHtml(contact.structure)}</div>
-      </div>
-      <div class="card-status ${contact.status}">
-        <div class="card-status-dot"></div>
-        ${contact.status === 'sent' ? 'Envoyé' : 'En attente'}
-      </div>
-    </div>
-    <div class="card-research" title="${escHtml(contact.research)}">${escHtml(contact.research)}</div>
-    <div class="card-email">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-        <polyline points="22,6 12,13 2,6"></polyline>
-      </svg>
-      ${escHtml(contact.email)}
-    </div>
-    <div class="card-preview-hint">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-        <circle cx="12" cy="12" r="3"></circle>
-      </svg>
-      Voir / envoyer le mail
-    </div>
-  `;
-
-  card.addEventListener('click', () => openModal(contact.id));
-  return card;
-}
-
-// ═══════════════════════════════════ STATS ═════════════════════════════════════
-
-function updateStats() {
-  const active = allContacts.filter(c => c.status !== 'deleted');
-  const pending = active.filter(c => c.status === 'pending').length;
-  const sent = active.filter(c => c.status === 'sent').length;
-  document.getElementById('pendingCount').textContent = pending;
-  document.getElementById('sentCount').textContent = sent;
-  document.getElementById('totalCount').textContent = active.length;
-}
-
-// ═══════════════════════════════════ MODAL ═════════════════════════════════════
-
-function openModal(contactId) {
-  const contact = allContacts.find(c => c.id === contactId);
-  if (!contact) return;
-
-  currentContactId = contactId;
-  isEditing = false;
-
-  // Fill header
-  const initials = getInitials(contact.name);
-  modalAvatar.textContent = initials;
-  modalContactName.textContent = contact.name;
-  modalStructure.textContent = contact.structure;
-  modalLocation.textContent = contact.location;
-  modalEmailLink.textContent = contact.email;
-  modalEmailLink.href = `mailto:${contact.email}`;
-  modalResearchTag.textContent = contact.research;
-
-  // Fill email
-  mailSubject.value = contact.subject;
-  mailBody.value = contact.body;
-
-  // Reset to read-only mode
-  setEditMode(false);
-
-  // Update send button state
-  if (contact.status === 'sent') {
-    btnSend.classList.add('sent-state');
-    btnSend.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      Déjà envoyé
-    `;
-    btnSend.disabled = true;
-  } else {
-    btnSend.classList.remove('sent-state');
-    btnSend.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-      Envoyer
-    `;
-    btnSend.disabled = false;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return res.json();
+    }
+    return res.text();
   }
 
-  // Show modal
-  modalOverlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
-}
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  AUTH
+  // ═══════════════════════════════════════════════════════════════════════════
 
-function closeModal() {
-  modalOverlay.classList.remove('active');
-  document.body.style.overflow = '';
-  currentContactId = null;
-  isEditing = false;
-  setEditMode(false);
-}
-
-function setEditMode(editing) {
-  isEditing = editing;
-  mailSubject.readOnly = !editing;
-  mailBody.readOnly = !editing;
-
-  if (editing) {
-    btnEdit.classList.add('editing');
-    btnEdit.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      Sauvegarder
-    `;
-    mailBody.focus();
-  } else {
-    btnEdit.classList.remove('editing');
-    btnEdit.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-      </svg>
-      Modifier
-    `;
+  async function checkAuth() {
+    try {
+      const user = await api('/api/me');
+      currentUser = user;
+      return true;
+    } catch {
+      return false;
+    }
   }
-}
 
-// Close on overlay click
-modalOverlay.addEventListener('click', (e) => {
-  if (e.target === modalOverlay) closeModal();
-});
-
-modalCloseBtn.addEventListener('click', closeModal);
-
-// Échap pour fermer
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (modalOverlay.classList.contains('active')) closeModal();
-    if (sendAllOverlay.classList.contains('active')) closeSendAllModal();
+  function showLoginSection() {
+    loginSection.style.display = '';
+    appSection.style.display   = 'none';
   }
-});
 
-// ─── Bouton Annuler ───────────────────────────────────────────────────────────
-btnCancel.addEventListener('click', closeModal);
+  function showAppSection(user) {
+    loginSection.style.display = 'none';
+    appSection.style.display   = '';
+    userAvatar.textContent     = getInitials(user.name || user.email);
+    userName.textContent       = user.name || user.email || DEFAULT_USER_NAME;
+  }
 
-// ─── Bouton Modifier / Sauvegarder ───────────────────────────────────────────
-btnEdit.addEventListener('click', async () => {
-  if (!isEditing) {
-    setEditMode(true);
-  } else {
-    // Sauvegarder les modifications
-    const newSubject = mailSubject.value.trim();
-    const newBody = mailBody.value.trim();
+  async function handleLogout() {
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+    } catch (e) { /* ignore */ }
+    currentUser = null;
+    contacts    = [];
+    documents   = [];
+    showLoginSection();
+  }
 
-    if (!newSubject || !newBody) {
-      showToast('L\'objet et le corps du mail ne peuvent pas être vides', 'warning');
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  DOCUMENTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function loadDocuments() {
+    try {
+      documents = await api('/api/documents');
+      renderDocuments();
+    } catch (e) {
+      console.error('Erreur chargement documents :', e.message);
+    }
+  }
+
+  function renderDocuments() {
+    docCount.textContent = `(${documents.length}/5)`;
+
+    if (documents.length === 0) {
+      documentsList.innerHTML = '<div class="documents-empty">Aucun document uploadé. Ajoutez vos CV et lettres de motivation (PDF).</div>';
       return;
     }
 
-    try {
-      const res = await fetch(`${API}/api/contacts/${currentContactId}`, {
-        method: 'PUT',
-        headers: { ...FETCH_HEADERS, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subject: newSubject, body: newBody })
+    documentsList.innerHTML = documents.map(doc => `
+      <div class="document-item" data-id="${doc.id}">
+        <div class="document-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <div class="document-info">
+          <div class="document-name">${doc.originalName}</div>
+          <div class="document-size">${formatSize(doc.size)}</div>
+        </div>
+        <button class="document-delete" data-id="${doc.id}" title="Supprimer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+          </svg>
+        </button>
+      </div>
+    `).join('');
+
+    // Event listeners sur les boutons supprimer
+    documentsList.querySelectorAll('.document-delete').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const docId = btn.dataset.id;
+        try {
+          await api(`/api/documents/${docId}`, { method: 'DELETE' });
+          showToast('Document supprimé', 'success');
+          await loadDocuments();
+        } catch (err) {
+          showToast('Erreur suppression : ' + err.message, 'error');
+        }
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
+    });
+  }
 
-      // Mettre à jour localement
-      const contact = allContacts.find(c => c.id === currentContactId);
-      if (contact) {
-        contact.subject = newSubject;
-        contact.body = newBody;
+  async function uploadDocuments(files) {
+    const formData = new FormData();
+    for (const file of files) {
+      if (file.type !== 'application/pdf') {
+        showToast(`${file.name} n'est pas un PDF. Ignoré.`, 'warning');
+        continue;
       }
-
-      setEditMode(false);
-      showToast('Modifications sauvegardées', 'success');
-    } catch (err) {
-      showToast('Erreur lors de la sauvegarde : ' + err.message, 'error');
+      formData.append('documents', file);
     }
-  }
-});
-
-// ─── Bouton Envoyer ───────────────────────────────────────────────────────────
-btnSend.addEventListener('click', async () => {
-  if (currentContactId === null) return;
-
-  const contact = allContacts.find(c => c.id === currentContactId);
-  if (!contact) return;
-
-  // Confirmation visuelle
-  btnSend.disabled = true;
-  const originalHTML = btnSend.innerHTML;
-  btnSend.innerHTML = `
-    <div style="width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-    Envoi en cours…
-  `;
-
-  try {
-    const res = await fetch(`${API}/api/send/${currentContactId}`, {
-      method: 'POST',
-      headers: FETCH_HEADERS,
-    });
-    const data = await res.json();
-
-    if (!data.success) throw new Error(data.error || 'Erreur d\'envoi');
-
-    // Mettre à jour le statut localement
-    contact.status = 'sent';
-    renderContacts();
-    updateStats();
-
-    showToast(`✅ Mail envoyé à ${contact.email}`, 'success');
-
-    // Mettre à jour le bouton en état "envoyé"
-    btnSend.classList.add('sent-state');
-    btnSend.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      Déjà envoyé
-    `;
-    btnSend.disabled = true;
-
-    // Fermer le modal après 1.2s
-    setTimeout(closeModal, 1200);
-
-  } catch (err) {
-    showToast('Erreur d\'envoi : ' + err.message, 'error');
-    btnSend.innerHTML = originalHTML;
-    btnSend.disabled = false;
-  }
-});
-
-// ─── Bouton Supprimer ─────────────────────────────────────────────────────────
-btnDelete.addEventListener('click', async () => {
-  if (currentContactId === null) return;
-
-  const contact = allContacts.find(c => c.id === currentContactId);
-  if (!contact) return;
-
-  try {
-    const res = await fetch(`${API}/api/contacts/${currentContactId}`, {
-      method: 'DELETE',
-      headers: FETCH_HEADERS,
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-
-    // Mettre à jour localement
-    contact.status = 'deleted';
-    renderContacts();
-    updateStats();
-
-    closeModal();
-    showToast(`Contact "${contact.name}" supprimé`, 'info');
-  } catch (err) {
-    showToast('Erreur lors de la suppression : ' + err.message, 'error');
-  }
-});
-
-// ═══════════════════════════════════ SEND ALL ══════════════════════════════════
-
-sendAllBtn.addEventListener('click', () => {
-  const pending = allContacts.filter(c => c.status === 'pending');
-  if (pending.length === 0) {
-    showToast('Aucun mail en attente à envoyer', 'warning');
-    return;
-  }
-
-  // Reset state
-  sendAllContent.style.display = 'block';
-  sendAllProgress.style.display = 'none';
-  sendAllFooter.style.display = 'flex';
-  sendAllText.innerHTML = `Vous êtes sur le point d'envoyer <strong>${pending.length} mail(s)</strong> de candidature spontanée.<br><br>Chaque mail incluera votre CV et votre lettre de recommandation en pièce jointe. Voulez-vous continuer ?`;
-
-  sendAllOverlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
-});
-
-function closeSendAllModal() {
-  sendAllOverlay.classList.remove('active');
-  document.body.style.overflow = '';
-}
-
-sendAllCloseBtn.addEventListener('click', closeSendAllModal);
-sendAllCancelBtn.addEventListener('click', closeSendAllModal);
-sendAllOverlay.addEventListener('click', (e) => {
-  if (e.target === sendAllOverlay) closeSendAllModal();
-});
-
-sendAllConfirmBtn.addEventListener('click', async () => {
-  const pending = allContacts.filter(c => c.status === 'pending');
-
-  // Afficher la barre de progression
-  sendAllContent.style.display = 'none';
-  sendAllProgress.style.display = 'block';
-  sendAllFooter.style.display = 'none';
-  progressFill.style.width = '0%';
-  progressLabel.textContent = `Envoi de 0 / ${pending.length} mails…`;
-
-  let sent = 0;
-  let failed = 0;
-
-  // Envoi un par un avec mise à jour en temps réel
-  for (let i = 0; i < pending.length; i++) {
-    const contact = pending[i];
-    progressLabel.textContent = `Envoi à ${contact.name} (${i + 1} / ${pending.length})…`;
 
     try {
-      const res = await fetch(`${API}/api/send/${contact.id}`, {
+      const result = await fetch(`${API}/api/documents/upload`, {
         method: 'POST',
-        headers: FETCH_HEADERS,
+        credentials: 'include',
+        body: formData,
       });
+
+      if (!result.ok) {
+        const err = await result.json();
+        throw new Error(err.error || `Erreur ${result.status}`);
+      }
+
+      const data = await result.json();
+      documents = data.documents;
+      renderDocuments();
+      showToast(`${data.uploaded} document(s) ajouté(s)`, 'success');
+    } catch (err) {
+      showToast('Erreur upload : ' + err.message, 'error');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  CONTACTS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function loadContacts() {
+    try {
+      contacts = await api('/api/contacts');
+      updateStats();
+      renderContacts();
+    } catch (e) {
+      console.error('Erreur chargement contacts :', e.message);
+    }
+  }
+
+  function updateStats() {
+    const pending = contacts.filter(c => c.status === 'pending').length;
+    const sent    = contacts.filter(c => c.status === 'sent').length;
+    pendingCount.textContent = pending;
+    sentCount.textContent    = sent;
+    totalCount.textContent   = contacts.length;
+    headerStats.style.display = contacts.length > 0 ? 'flex' : 'none';
+  }
+
+  function getFilteredContacts() {
+    let filtered = contacts;
+    if (currentFilter === 'pending') {
+      filtered = contacts.filter(c => c.status !== 'sent' && c.status !== 'deleted');
+    } else if (currentFilter === 'sent') {
+      filtered = contacts.filter(c => c.status === 'sent');
+    }
+
+    const query = searchInput.value.toLowerCase().trim();
+    if (query) {
+      filtered = filtered.filter(c =>
+        (c.name || '').toLowerCase().includes(query) ||
+        (c.structure || '').toLowerCase().includes(query) ||
+        (c.email || '').toLowerCase().includes(query) ||
+        (c.location || '').toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  }
+
+  function renderContacts() {
+    const filtered = getFilteredContacts();
+
+    if (filtered.length === 0) {
+      contactsGrid.innerHTML = '';
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    contactsGrid.innerHTML = filtered.map(c => {
+      const initials = getInitials(c.name);
+      const isSent   = c.status === 'sent';
+      const isPending = c.status === 'pending';
+      const badgeClass = isSent ? 'sent' : 'pending';
+      const badgeText  = isSent ? 'Envoyé' : 'En attente';
+
+      return `
+        <div class="contact-card ${isSent ? 'sent' : 'pending'}" data-id="${c.id}">
+          <div class="card-header">
+            <div class="card-avatar">${initials}</div>
+            <div class="card-body">
+              <div class="card-name">${c.name || 'Sans nom'}</div>
+              <div class="card-sublabel">${c.structure || c.location || ''}</div>
+            </div>
+            <span class="card-badge ${badgeClass}">${badgeText}</span>
+          </div>
+          <div class="card-subject">${truncate(c.subject || 'Pas d\'objet', 60)}</div>
+          <div class="card-footer">
+            <span class="card-email">${c.email}</span>
+            <span class="card-sent-date">${c.sentAt ? formatDate(c.sentAt) : ''}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Event listeners sur les cartes
+    contactsGrid.querySelectorAll('.contact-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = parseInt(card.dataset.id, 10);
+        const contact = contacts.find(c => c.id === id);
+        if (contact) openModal(contact);
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  MODAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function openModal(contact) {
+    currentContact = contact;
+    editing = false;
+
+    modalAvatar.textContent       = getInitials(contact.name);
+    modalContactName.textContent  = contact.name || 'Sans nom';
+    modalStructure.textContent    = contact.structure || '';
+    modalLocation.textContent     = contact.location || '';
+    modalEmailLink.textContent    = contact.email;
+    modalEmailLink.href           = `mailto:${contact.email}`;
+    modalResearchTag.textContent  = contact.research || 'Recherche';
+
+    mailSubject.value = contact.subject || '';
+    mailBody.value    = contact.body || '';
+    mailBody.readOnly = true;
+
+    // Si déjà envoyé, désactiver le bouton Envoyer
+    const isSent = contact.status === 'sent';
+    btnSend.disabled = isSent;
+    btnSend.classList.toggle('sent-state', isSent);
+    btnSend.innerHTML = isSent
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Envoyé'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> Envoyer';
+
+    // réinitialiser le bouton edit
+    btnEdit.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Modifier';
+
+    modalOverlay.classList.add('show');
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('show');
+    currentContact = null;
+    editing = false;
+  }
+
+  async function handleSend(contact) {
+    try {
+      btnSend.disabled = true;
+      btnSend.innerHTML = '<div class="progress-spinner" style="width:14px;height:14px;"></div> Envoi…';
+      await api(`/api/send/${contact.id}`, { method: 'POST' });
+      showToast(`Mail envoyé à ${contact.email} ✅`, 'success');
+      closeModal();
+      await loadContacts();
+    } catch (err) {
+      showToast('Erreur envoi : ' + err.message, 'error');
+      btnSend.disabled = false;
+      btnSend.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> Envoyer';
+    }
+  }
+
+  async function handleEdit(contact) {
+    if (!editing) {
+      // Passer en mode édition
+      editing = true;
+      mailBody.readOnly = false;
+      mailSubject.disabled = false;
+      mailBody.classList.add('editing');
+      mailSubject.classList.add('editing');
+      btnEdit.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Sauvegarder';
+      return;
+    }
+
+    // Sauvegarder les modifications
+    try {
+      await api(`/api/contacts/${contact.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          subject: mailSubject.value,
+          body: mailBody.value,
+        }),
+      });
+
+      showToast('Modifications sauvegardées ✅', 'success');
+      editing = false;
+      mailBody.readOnly = true;
+      mailSubject.disabled = true;
+      mailBody.classList.remove('editing');
+      mailSubject.classList.remove('editing');
+      btnEdit.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Modifier';
+
+      await loadContacts();
+    } catch (err) {
+      showToast('Erreur sauvegarde : ' + err.message, 'error');
+    }
+  }
+
+  async function handleDelete(contact) {
+    if (!confirm(`Supprimer le contact ${contact.name || contact.email} ?`)) return;
+    try {
+      await api(`/api/contacts/${contact.id}`, { method: 'DELETE' });
+      showToast('Contact supprimé', 'info');
+      closeModal();
+      await loadContacts();
+    } catch (err) {
+      showToast('Erreur suppression : ' + err.message, 'error');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  UPLOAD EXCEL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    uploadProgress.style.display = 'flex';
+
+    try {
+      const res = await fetch(`${API}/api/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Erreur ${res.status}`);
+      }
+
+      const data = await res.json();
+      contacts = data.contacts;
+      await loadDocuments();
+      showToast(`${contacts.length} contacts importés ✅`, 'success');
+
+      // Afficher contacts
+      contactsSection.style.display = 'block';
+      dropZone.classList.add('has-contacts');
+      updateStats();
+      renderContacts();
+    } catch (err) {
+      showToast('Erreur import : ' + err.message, 'error');
+    } finally {
+      uploadProgress.style.display = 'none';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  SEND ALL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  function openSendAllModal() {
+    const pending = contacts.filter(c => c.status === 'pending');
+    if (pending.length === 0) {
+      showToast('Aucun mail en attente', 'warning');
+      return;
+    }
+
+    sendAllText.textContent = `Envoyer ${pending.length} mail${pending.length > 1 ? 's' : ''} en attente ?`;
+    sendAllContent.style.display = 'block';
+    sendAllProgress.style.display = 'none';
+    sendAllConfirmBtn.disabled = false;
+    sendAllConfirmBtn.textContent = 'Confirmer l\'envoi';
+    sendAllOverlay.classList.add('show');
+  }
+
+  async function handleSendAll() {
+    sendAllContent.style.display = 'none';
+    sendAllProgress.style.display = 'block';
+    sendAllConfirmBtn.disabled = true;
+    sendAllCancelBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${API}/api/send-all`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `Erreur ${res.status}`);
+      }
+
       const data = await res.json();
 
-      if (data.success) {
-        contact.status = 'sent';
-        sent++;
-      } else {
-        failed++;
-        console.error(`Erreur pour ${contact.email}:`, data.error);
+      // Mettre à jour la barre de progression
+      if (data.results) {
+        const total = data.results.length;
+        const success = data.results.filter(r => r.success).length;
+        const failed = total - success;
+
+        progressFill.style.width = '100%';
+        progressLabel.textContent = `${success}/${total} envoyés avec succès`;
+
+        setTimeout(() => {
+          if (failed > 0) {
+            showToast(`${success} mail(s) envoyé(s), ${failed} échec(s)`, failed > 0 ? 'warning' : 'success', 5000);
+          } else {
+            showToast(`${success} mail(s) envoyé(s) avec succès ✅`, 'success', 4000);
+          }
+        }, 500);
       }
+
+      await loadContacts();
     } catch (err) {
-      failed++;
-    }
-
-    const percent = Math.round(((i + 1) / pending.length) * 100);
-    progressFill.style.width = percent + '%';
-
-    // Délai entre chaque envoi
-    if (i < pending.length - 1) {
-      await new Promise(r => setTimeout(r, 1600));
+      showToast('Erreur envoi en masse : ' + err.message, 'error');
+    } finally {
+      sendAllCancelBtn.disabled = false;
+      setTimeout(() => {
+        sendAllOverlay.classList.remove('show');
+        progressFill.style.width = '0%';
+      }, 1500);
     }
   }
 
-  renderContacts();
-  updateStats();
-  closeSendAllModal();
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  INIT
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  if (failed === 0) {
-    showToast(`✅ ${sent} mail(s) envoyé(s) avec succès !`, 'success');
-  } else {
-    showToast(`⚠️ ${sent} envoyé(s), ${failed} échoué(s). Vérifiez votre connexion.`, 'warning');
+  async function init() {
+    const authenticated = await checkAuth();
+
+    if (authenticated && currentUser) {
+      showAppSection(currentUser);
+
+      // Vérifier si config.js a défini une auto-connexion (mode hébergé)
+      // Charger les contacts, documents
+      await Promise.all([loadContacts(), loadDocuments()]);
+
+      if (contacts.length > 0) {
+        contactsSection.style.display = 'block';
+        dropZone.classList.add('has-contacts');
+      }
+    } else {
+      showLoginSection();
+    }
   }
-});
 
-// ═══════════════════════════════════ TOASTS ═══════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  EVENT LISTENERS
+  // ═══════════════════════════════════════════════════════════════════════════
 
-const TOAST_ICONS = {
-  success: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-  error:   `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`,
-  info:    `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
-  warning: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`
-};
-
-function showToast(message, type = 'info', duration = 4000) {
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `
-    <div class="toast-icon">${TOAST_ICONS[type] || TOAST_ICONS.info}</div>
-    <span class="toast-msg">${message}</span>
-  `;
-  toastContainer.appendChild(toast);
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => toast.classList.add('show'));
+  // Google Login
+  googleLoginBtn.addEventListener('click', () => {
+    window.location.href = `${API}/api/auth/google`;
   });
 
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.classList.add('hide');
-    setTimeout(() => toast.remove(), 350);
-  }, duration);
-}
+  // Zimbra Login
+  zimbraLoginBtn.addEventListener('click', async () => {
+    try {
+      const result = await api('/api/auth/zimbra', { method: 'POST' });
+      if (result.success) {
+        currentUser = result.user;
+        showAppSection(currentUser);
+        await Promise.all([loadContacts(), loadDocuments()]);
+        if (contacts.length > 0) {
+          contactsSection.style.display = 'block';
+          dropZone.classList.add('has-contacts');
+        }
+        showToast('Connecté avec Zimbra', 'success');
+      }
+    } catch (err) {
+      showToast('Erreur connexion Zimbra : ' + err.message, 'error');
+    }
+  });
 
-// ═══════════════════════════════════ UTILS ════════════════════════════════════
+  // Logout
+  logoutBtn.addEventListener('click', handleLogout);
 
-function getInitials(name) {
-  if (!name) return '?';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
+  // Drag & drop
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) uploadFile(file);
+  });
 
-function escHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+  browseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) uploadFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+
+  // Search
+  searchInput.addEventListener('input', renderContacts);
+
+  // Filter tabs
+  filterTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      filterTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = tab.dataset.filter;
+      renderContacts();
+    });
+  });
+
+  // Reset / Nouveau fichier
+  resetBtn.addEventListener('click', () => {
+    contacts = [];
+    contactsSection.style.display = 'none';
+    dropZone.classList.remove('has-contacts');
+    renderContacts();
+    headerStats.style.display = 'none';
+  });
+
+  // Modal - Send
+  btnSend.addEventListener('click', () => {
+    if (currentContact && !btnSend.disabled) handleSend(currentContact);
+  });
+
+  // Modal - Edit
+  btnEdit.addEventListener('click', () => {
+    if (currentContact) handleEdit(currentContact);
+  });
+
+  // Modal - Delete
+  btnDelete.addEventListener('click', () => {
+    if (currentContact) handleDelete(currentContact);
+  });
+
+  // Modal - Cancel / Close
+  btnCancel.addEventListener('click', closeModal);
+  modalCloseBtn.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+  });
+
+  // Send All
+  sendAllBtn.addEventListener('click', openSendAllModal);
+  sendAllConfirmBtn.addEventListener('click', handleSendAll);
+  sendAllCloseBtn.addEventListener('click', () => sendAllOverlay.classList.remove('show'));
+  sendAllCancelBtn.addEventListener('click', () => sendAllOverlay.classList.remove('show'));
+  sendAllOverlay.addEventListener('click', (e) => {
+    if (e.target === sendAllOverlay) sendAllOverlay.classList.remove('show');
+  });
+
+  // Documents upload
+  docUploadBtn.addEventListener('click', () => docFileInput.click());
+  docFileInput.addEventListener('change', () => {
+    if (docFileInput.files.length > 0) {
+      uploadDocuments(docFileInput.files);
+      docFileInput.value = '';
+    }
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      sendAllOverlay.classList.remove('show');
+    }
+    // Ctrl+Enter ou Cmd+Enter
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      if (modalOverlay.classList.contains('show') && currentContact && !btnSend.disabled) {
+        handleSend(currentContact);
+      }
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  DEMARRAGE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  // Exposer showToast pour debug
+  window.showToast = showToast;
+})();

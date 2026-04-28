@@ -12,136 +12,254 @@
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════ HEADER ═══════════════════════════════════ -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <span class="brand-name">MailCandid</span>
-          <span class="brand-sub">Automatisation de candidatures</span>
-        </div>
+  <!-- ═══════════════════════════════════ LANDING PAGE ══════════════════════════════ -->
+  <section id="loginSection">
+    <div class="login-container">
+      <!-- Particules décoratives -->
+      <div class="login-particles">
+        <div class="particle p1"></div>
+        <div class="particle p2"></div>
+        <div class="particle p3"></div>
+        <div class="particle p4"></div>
       </div>
-      <div class="header-stats" id="headerStats" style="display:none">
-        <div class="stat-badge pending" id="statPending">
-          <span class="stat-dot"></span>
-          <span id="pendingCount">0</span> en attente
+
+      <div class="login-card">
+        <!-- Logo -->
+        <div class="login-logo">
+          <div class="login-logo-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </div>
+          <h1 class="login-brand-name">MailCandid</h1>
         </div>
-        <div class="stat-badge sent" id="statSent">
-          <span class="stat-dot"></span>
-          <span id="sentCount">0</span> envoyés
+
+        <!-- Tagline -->
+        <p class="login-tagline">Automatisez vos candidatures<br/>en un clic</p>
+        <p class="login-description">Connectez votre boîte Gmail pour envoyer des candidatures personnalisées directement depuis votre compte. Gérez vos contacts, personnalisez vos messages et suivez vos envois en temps réel.</p>
+
+        <!-- Boutons de connexion -->
+        <div class="login-buttons">
+          <button id="googleLoginBtn" class="btn-google">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            Se connecter avec Google
+          </button>
+
+          <div class="login-divider"><span>ou</span></div>
+
+          <button id="zimbraLoginBtn" class="btn-zimbra">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Se connecter avec Zimbra
+          </button>
         </div>
-        <div class="stat-badge total">
-          <span class="stat-dot"></span>
-          <span id="totalCount">0</span> total
-        </div>
+
+        <!-- Footer -->
+        <p class="login-footer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Vos identifiants ne sont jamais stockés. Connexion sécurisée via OAuth2.
+        </p>
       </div>
     </div>
-  </header>
+  </section>
 
-  <!-- ═══════════════════════════════════ MAIN ════════════════════════════════════ -->
-  <main class="main-content">
+  <!-- ═══════════════════════════════════ APPLICATION ═══════════════════════════════ -->
+  <section id="appSection" style="display:none">
 
-    <!-- ── UPLOAD ZONE ── -->
-    <section class="upload-section" id="uploadSection">
-      <div class="upload-card" id="dropZone">
-        <div class="upload-icon">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-        </div>
-        <h2 class="upload-title">Déposez votre fichier Excel</h2>
-        <p class="upload-subtitle">Glissez-déposez votre fichier <strong>.xlsx</strong> ici, ou cliquez pour parcourir</p>
-        <button class="btn-browse" id="browseBtn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          Parcourir les fichiers
-        </button>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" />
-        <p class="upload-hint">Format accepté : Excel (.xlsx, .xls)</p>
+    <!-- Particules décoratives (même style que login) -->
+    <div class="app-particles">
+      <div class="app-particle ap1"></div>
+      <div class="app-particle ap2"></div>
+      <div class="app-particle ap3"></div>
+      <div class="app-particle ap4"></div>
+    </div>
 
-        <!-- Upload progress -->
-        <div class="upload-progress" id="uploadProgress">
-          <div class="progress-spinner"></div>
-          <span>Analyse du fichier en cours…</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── CONTACTS SECTION ── -->
-    <section class="contacts-section" id="contactsSection" style="display:none">
-
-      <!-- Toolbar -->
-      <div class="contacts-toolbar">
-        <div class="toolbar-left">
-          <h2 class="section-title">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
             </svg>
-            Contacts importés
-          </h2>
-          <div class="filter-tabs">
-            <button class="filter-tab active" data-filter="all">Tous</button>
-            <button class="filter-tab" data-filter="pending">En attente</button>
-            <button class="filter-tab" data-filter="sent">Envoyés</button>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">MailCandid</span>
+            <span class="brand-sub">Automatisation de candidatures</span>
           </div>
         </div>
-        <div class="toolbar-right">
-          <button class="btn-secondary" id="resetBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="1 4 1 10 7 10"></polyline>
-              <path d="M3.51 15a9 9 0 1 0 .49-3.4"></path>
+
+        <!-- User info & logout -->
+        <div class="header-right" id="headerRight">
+          <div class="user-info" id="userInfo">
+            <span class="user-avatar" id="userAvatar">?</span>
+            <span class="user-name" id="userName">Utilisateur</span>
+          </div>
+          <button class="btn-logout" id="logoutBtn" title="Se déconnecter">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
             </svg>
-            Nouveau fichier
-          </button>
-          <button class="btn-primary" id="sendAllBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-            Tout envoyer
+            Déconnexion
           </button>
         </div>
-      </div>
 
-      <!-- Search bar -->
-      <div class="search-bar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="text" id="searchInput" placeholder="Rechercher un contact, un labo…" />
+        <div class="header-stats" id="headerStats" style="display:none">
+          <div class="stat-badge pending" id="statPending">
+            <span class="stat-dot"></span>
+            <span id="pendingCount">0</span> en attente
+          </div>
+          <div class="stat-badge sent" id="statSent">
+            <span class="stat-dot"></span>
+            <span id="sentCount">0</span> envoyés
+          </div>
+          <div class="stat-badge total">
+            <span class="stat-dot"></span>
+            <span id="totalCount">0</span> total
+          </div>
+        </div>
       </div>
+    </header>
 
-      <!-- Contact Grid -->
-      <div class="contacts-grid" id="contactsGrid">
-        <!-- Cards générées dynamiquement -->
-      </div>
+    <!-- MAIN -->
+    <main class="main-content">
 
-      <!-- Empty state -->
-      <div class="empty-state" id="emptyState" style="display:none">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-        </svg>
-        <p>Aucun contact trouvé</p>
-      </div>
-    </section>
+      <!-- ── UPLOAD ZONE ── -->
+      <section class="upload-section" id="uploadSection">
+        <div class="upload-card" id="dropZone">
+          <div class="upload-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h2 class="upload-title">Déposez votre fichier Excel</h2>
+          <p class="upload-subtitle">Glissez-déposez votre fichier <strong>.xlsx</strong> ici, ou cliquez pour parcourir</p>
+          <button class="btn-browse" id="browseBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Parcourir les fichiers
+          </button>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" />
+          <p class="upload-hint">Format accepté : Excel (.xlsx, .xls)</p>
 
-  </main>
+          <!-- Upload progress -->
+          <div class="upload-progress" id="uploadProgress">
+            <div class="progress-spinner"></div>
+            <span>Analyse du fichier en cours…</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CONTACTS SECTION ── -->
+      <section class="contacts-section" id="contactsSection" style="display:none">
+
+        <!-- Toolbar -->
+        <div class="contacts-toolbar">
+          <div class="toolbar-left">
+            <h2 class="section-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              Contacts importés
+            </h2>
+            <div class="filter-tabs">
+              <button class="filter-tab active" data-filter="all">Tous</button>
+              <button class="filter-tab" data-filter="pending">En attente</button>
+              <button class="filter-tab" data-filter="sent">Envoyés</button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn-secondary" id="resetBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.4"></path>
+              </svg>
+              Nouveau fichier
+            </button>
+            <button class="btn-primary" id="sendAllBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              Tout envoyer
+            </button>
+          </div>
+        </div>
+
+        <!-- Search bar -->
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Rechercher un contact, un labo…" />
+        </div>
+
+        <!-- Contact Grid -->
+        <div class="contacts-grid" id="contactsGrid">
+          <!-- Cards générées dynamiquement -->
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState" style="display:none">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          </svg>
+          <p>Aucun contact trouvé</p>
+        </div>
+      </section>
+
+      <!-- ── DOCUMENTS SECTION ── -->
+      <section class="documents-section" id="documentsSection">
+        <div class="documents-card">
+          <div class="documents-header">
+            <h3 class="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              Mes documents <span class="doc-count" id="docCount">(0/5)</span>
+            </h3>
+            <button class="btn-secondary" id="docUploadBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Ajouter un PDF
+            </button>
+          </div>
+          <input type="file" id="docFileInput" accept=".pdf" multiple style="display:none" />
+          <div class="documents-list" id="documentsList">
+            <!-- Documents chargés dynamiquement -->
+          </div>
+          <p class="documents-hint">Format accepté : PDF uniquement. Maximum 5 fichiers.</p>
+        </div>
+      </section>
+
+    </main>
+  </section>
 
   <!-- ═══════════════════════════════════ MODAL ════════════════════════════════════ -->
   <div class="modal-overlay" id="modalOverlay">
@@ -175,7 +293,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
           </svg>
-          CV_LETTRE_DE_RECOMMANDATION.pdf
+          Pièces jointes incluses
         </span>
       </div>
 
@@ -245,7 +363,7 @@
   <div class="modal-overlay" id="sendAllOverlay">
     <div class="modal modal-small">
       <div class="modal-header">
-        <h3 style="font-size:1.1rem;font-weight:700;color:#1e293b">Envoyer tous les mails</h3>
+        <h3 style="font-size:1.1rem;font-weight:700;color:#f1f5f9">Envoyer tous les mails</h3>
         <button class="modal-close-btn" id="sendAllCloseBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -261,11 +379,11 @@
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
           </div>
-          <p id="sendAllText" style="text-align:center;color:#475569;font-size:0.95rem;margin-top:0.75rem"></p>
+          <p id="sendAllText" style="text-align:center;color:#cbd5e1;font-size:0.95rem;margin-top:0.75rem"></p>
         </div>
         <div id="sendAllProgress" style="display:none">
           <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
-          <p id="progressLabel" style="text-align:center;font-size:0.85rem;color:#64748b;margin-top:0.5rem"></p>
+          <p id="progressLabel" style="text-align:center;font-size:0.85rem;color:#94a3b8;margin-top:0.5rem"></p>
         </div>
       </div>
       <div class="modal-footer" id="sendAllFooter">
