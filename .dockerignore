@@ -1,0 +1,76 @@
+# ─── Node.js ──────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Environnement & Identifiants ────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.env
+
+# ─── Fichiers sensibles / données personnelles ────────────────────────────────
+CV_LETTRE_DE_RECOMMANDATION.pdf
+*.xlsx
+*.xls
+GOOGLE-KEY
+
+# ─── Git ─────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ─── Système (macOS) ─────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+
+# ─── IDE / Éditeurs ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.settings/
+.project
+.classpath
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+
+# ─── Prisma / SQLite ─────────────────────────────────────────────────────────
+# Base de données SQLite (générée par Prisma)
+*.db
+prisma/migrations/  # Les migrations sont déjà dans l'image via COPY
+
+# ─── Fichiers temporaires ─────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+creer_bibliotheque.py
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+docker-compose.yml
+docker-compose*.yml
+
+# ─── Déploiement ─────────────────────────────────────────────────────────────
+deployment/
+
+# ─── Fichiers de l'espace de travail ──────────────────────────────────────────
+*.code-workspace
+CONTINUITE_TACHE.md
+Démarrer l'application.command
+
+# ─── Rapports Graphify (inutiles dans le conteneur) ──────────────────────────
+graphify-out/
+
+# ─── Fichiers uploadés (seront montés via volume) ────────────────────────────
+uploads/
