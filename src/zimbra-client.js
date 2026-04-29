@@ -21,15 +21,33 @@ let _authToken   = null;
 let _tokenExpiry = 0;      // timestamp ms
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Construire les entités XML sans utiliser & pour éviter que l'auto-formateur
+// ne les "corrige" — on utilise String.fromCharCode pour échapper
+// ─────────────────────────────────────────────────────────────────────────────
+const AMP = String.fromCharCode(38) + 'amp;';
+const LT  = String.fromCharCode(38) + 'lt;';
+const GT  = String.fromCharCode(38) + 'gt;';
+const QUOT = String.fromCharCode(38) + 'quot;';
+const APOS = String.fromCharCode(38) + 'apos;';
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Utilitaire : échapper les caractères XML spéciaux
 // ─────────────────────────────────────────────────────────────────────────────
 function escapeXml(str) {
   return String(str)
-    .replace(/&/g,  '&amp;')
-    .replace(/</g,  '&lt;')
-    .replace(/>/g,  '&gt;')
-    .replace(/"/g,  '&quot;')
-    .replace(/'/g,  '&apos;');
+    .replace(/&/g, AMP)
+    .replace(/</g, LT)
+    .replace(/>/g, GT)
+    .replace(/"/g, QUOT)
+    .replace(/'/g, APOS);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utilitaire : encoder un header non-ASCII selon RFC 2047
+// ─────────────────────────────────────────────────────────────────────────────
+function mimeEncodeHeader(text) {
+  if (/^[\x00-\x7F]*$/.test(String(text))) return String(text);
+  return '=?UTF-8?B?' + Buffer.from(String(text), 'utf8').toString('base64') + '?=';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -173,9 +191,9 @@ async function sendEmail({ to, subject, body, attachmentPath }) {
   const bodyXml = `
     <SendMsgRequest xmlns="urn:zimbraMail">
       <m>
-        <e t="f" a="${escapeXml(from)}" p="${escapeXml(fromName)}"/>
+        <e t="f" a="${escapeXml(from)}" p="${escapeXml(mimeEncodeHeader(fromName))}"/>
         <e t="t" a="${escapeXml(to)}"/>
-        <su>${escapeXml(subject)}</su>
+        <su>${escapeXml(mimeEncodeHeader(subject))}</su>
         <mp ct="text/plain">
           <content>${escapeXml(body)}</content>
         </mp>

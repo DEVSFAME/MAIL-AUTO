@@ -308,6 +308,14 @@ ${process.env.SMTP_USER}`;
   return { subject, body };
 }
 
+// ─── Utilitaire : encoder un header non-ASCII selon RFC 2047 ──────────────────
+function mimeEncodeHeader(text) {
+  // Si le texte ne contient QUE des caractères ASCII 7-bit, pas besoin d'encoder
+  if (/^[\x00-\x7F]*$/.test(String(text))) return String(text);
+  // Encoder en Base64 UTF-8 avec le préfixe RFC 2047
+  return '=?UTF-8?B?' + Buffer.from(String(text), 'utf8').toString('base64') + '?=';
+}
+
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║  FONCTION D'ENVOI GMAIL (via Gmail REST API / OAuth2)
 // ╚══════════════════════════════════════════════════════════════════════════════
@@ -388,9 +396,9 @@ async function sendGmail(user, { to, subject, body, attachmentPaths = [] }) {
   mimeParts.push(`--${boundary}--`);
 
   const rawMessage = [
-    `From: "${user.name || 'MOHAMMAD ANIKA'}" <${user.email}>`,
+    `From: "${mimeEncodeHeader(user.name || 'MOHAMMAD ANIKA')}" <${user.email}>`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${mimeEncodeHeader(subject)}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',

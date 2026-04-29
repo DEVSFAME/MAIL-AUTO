@@ -11,10 +11,14 @@
             "id": "a18c76f0cf056375",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Vue graphique"
+              "type": "markdown",
+              "state": {
+                "file": "docker tuto.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "docker tuto"
             }
           }
         ]
@@ -90,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "docker tuto.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Rétroliens"
+              "title": "Rétrolien pour docker tuto"
             }
           },
           {
@@ -108,11 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "docker tuto.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Liens sortants"
+              "title": "Liens sortants de docker tuto"
             }
           },
           {
@@ -150,12 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "docker tuto.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Plan"
+              "title": "Plan de docker tuto"
             }
           }
         ]
@@ -178,17 +185,24 @@
   },
   "active": "a18c76f0cf056375",
   "lastOpenFiles": [
-    "prisma.config.ts",
-    "prisma.config.ts.backup",
-    "node_modules/better-sqlite3/build/Release/better_sqlite3.node",
-    "node_modules/better-sqlite3/build/Release",
-    "node_modules/better-sqlite3/build",
-    "node_modules/@prisma/client/LICENSE",
-    "node_modules/@prisma/client/runtime/wasm-compiler-edge.d.ts",
-    "node_modules/@prisma/client/runtime/index-browser.d.ts",
-    "node_modules/@prisma/client/sql.d.ts",
-    "node_modules/@prisma/client/index.d.ts",
-    "node_modules/@prisma/client/extension.d.ts",
+    "Sans titre.canvas",
+    "00_Dashboard.md",
+    "node_modules/readable-stream 2/lib/internal/streams/stream.js",
+    "node_modules/readable-stream 2/lib/internal/streams/stream-browser.js",
+    "node_modules/readable-stream 2/lib/internal/streams/from-browser.js",
+    "node_modules/readable-stream 2/lib/internal/streams",
+    "node_modules/readable-stream 2/lib/internal",
+    "node_modules/readable-stream 2/lib",
+    "node_modules/readable-stream 2",
+    "node_modules/readable-stream 3/lib/internal/streams/stream.js",
+    "node_modules/readable-stream 3/lib/internal/streams/stream-browser.js",
+    "node_modules/readable-stream 3/lib/internal/streams/state.js",
+    "node_modules/readable-stream 3/README.md",
+    "node_modules/readable-stream 3/GOVERNANCE.md",
+    "node_modules/readable-stream 3/CONTRIBUTING.md",
+    "node_modules/readable-stream 2/README.md",
+    "node_modules/readable-stream 2/GOVERNANCE.md",
+    "node_modules/readable-stream 2/CONTRIBUTING.md",
     "node_modules/@prisma/client/README.md",
     "node_modules/xlsx/legend.png",
     "node_modules/xlsx/formats.png",
@@ -209,16 +223,8 @@
     "node_modules/body-parser/node_modules/qs/LICENSE.md",
     "node_modules/body-parser/node_modules/qs/CHANGELOG.md",
     "node_modules/@lucia-auth/adapter-prisma/README.md",
-    "node_modules/@lucia-auth/adapter-prisma/CHANGELOG.md",
-    "node_modules/@oslojs/binary/README.md",
-    "node_modules/debug/CHANGELOG.md",
-    "node_modules/@oslojs/jwt/node_modules/@oslojs/encoding/README.md",
-    "node_modules/debug/README.md",
-    "node_modules/express/Readme.md",
-    "node_modules/send/node_modules/ms/readme.md",
     "Automatisation MAIL_OLD/node_modules/xlsx/legend.png",
     "Automatisation MAIL_OLD/node_modules/xlsx/formats.png",
-    "Automatisation MAIL_OLD/node_modules/retry/equation.gif",
-    "Sans titre.canvas"
+    "Automatisation MAIL_OLD/node_modules/retry/equation.gif"
   ]
 }
