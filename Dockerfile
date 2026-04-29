@@ -23,22 +23,29 @@ WORKDIR /app
 #    Layer 1 : si package.json ne change pas → cache hit, pas de réinstall
 COPY package*.json ./
 
-# ── 2. Installer les dépendances (sans prisma generate pour l'instant) ──
-#    On désactive le postinstall pour éviter prisma generate avant d'avoir
-#    le schéma. Cela permet de cacher node_modules/ si seul le schéma change.
+# ── 2. Installer les dépendances ────────────────────────────────────────
+#    On garde --ignore-scripts seulement pour éviter prisma generate,
+#    mais better-sqlite3 nécessite sa compilation native. On la fait
+#    explicitement après avec node-gyp.
 #    --legacy-peer-deps nécessaire pour @lucia-auth/adapter-prisma qui n'est
 #    pas compatible avec @prisma/client@7.x (conflit de peer dependencies)
 RUN npm ci --legacy-peer-deps --ignore-scripts
 
-# ── 3. Rebuild forcé de better-sqlite3 pour garantir la compilation native
-RUN npx better-sqlite3 rebuild 2>/dev/null || true
+# ── 3. Compiler le binding natif better-sqlite3 ─────────────────────────
+#    Étape critique : le binding natif doit être compilé pour l'architecture
+#    du conteneur (linux/arm64 + musl). Sans cette compilation, Prisma
+#    échouera au runtime avec "Could not locate the bindings file".
+RUN cd /app/node_modules/better-sqlite3 && \
+    npx node-gyp rebuild 2>&1 && \
+    node -e "require('better-sqlite3'); console.log('✅ better-sqlite3 bindings OK')"
 
-# ── 4. Copier Prisma (schéma + config) — layer séparé du npm install ────
+# ── 4. Copier Prisma (schéma + config) — layer séparé du npm install ───
 #    Layer 2 : si seul le schéma change, node_modules reste en cache
+#    prisma.config.ts est requis par Prisma v7+ à la place de url dans le schema
 COPY prisma/schema.prisma ./prisma/schema.prisma
 COPY prisma.config.ts ./
 
-# ── 5. Générer le client Prisma + compiler le wasm ─────────────────────
+# ── 5. Générer le client Prisma ─────────────────────────────────────────
 #    Layer 3 : ne coûte que le temps de prisma generate (rapide)
 RUN npx prisma generate
 
@@ -65,39 +72,35 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/prisma ./prisma
 
-# ── 3. Config Prisma (nécessaire pour les commandes CLI en runtime) ────────
-COPY --from=builder /app/prisma.config.ts ./
-
-# ── 4. Code source de l'application (uniquement ce qui est nécessaire) ──────
+# ── 3. Code source de l'application (uniquement ce qui est nécessaire) ──────
 COPY public ./public
 COPY src ./src
 COPY server.js ./
+#    prisma.config.ts est nécessaire pour les migrations Prisma v7 au runtime
+COPY --from=builder /app/prisma.config.ts ./
 
-# ── 5. Créer les répertoires de données avec les bons droits ────────────────
+# ── 4. Créer les répertoires de données avec les bons droits ────────────────
 RUN mkdir -p /app/uploads/documents && \
     chown -R appuser:appgroup /app/uploads && \
     chmod -R 755 /app/uploads
 
-# ── 6. Entrypoint : exécute les migrations Prisma puis démarre l'app ───────
+# ── 5. Entrypoint : exécute les migrations Prisma puis démarre l'app ───────
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# ── 7. Variables d'environnement par défaut ─────────────────────────────────
+# ── 6. Variables d'environnement par défaut ─────────────────────────────────
 ENV NODE_ENV=production \
     PORT=3001 \
     TZ=Europe/Paris
 
-# ── 8. Exposition du port ───────────────────────────────────────────────────
+# ── 7. Exposition du port ───────────────────────────────────────────────────
 EXPOSE 3001
 
-# ── 9. Healthcheck ──────────────────────────────────────────────────────────
+# ── 8. Healthcheck ──────────────────────────────────────────────────────────
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
 
-# ── 10. Définition de l'entrypoint et de la commande par défaut ─────────────
+# ── 9. Définition de l'entrypoint et de la commande par défaut ──────────────
 #    L'entrypoint exécute les migrations en root puis bascule vers appuser
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
-
-
-

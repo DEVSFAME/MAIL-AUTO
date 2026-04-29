@@ -1,7 +1,7 @@
-# Graph Report - Automatisation MAIL  (2026-04-28)
+# Graph Report - Automatisation MAIL  (2026-04-29)
 
 ## Corpus Check
-- 7 files · ~13,547 words
+- 7 files · ~13,277 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary

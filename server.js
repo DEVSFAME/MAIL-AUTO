@@ -159,12 +159,15 @@ app.get('/api/auth/google/callback', async (req, res) => {
     const codeVerifier = cookies.code_verifier;
 
     // Échanger le code contre les tokens
+    console.log('🔄 Échange du code OAuth contre les tokens...');
     const tokens = await googleAuth.validateAuthorizationCode(code, codeVerifier);
 
     // Arctic v3.7+ : OAuth2Tokens est une classe avec des méthodes (accessToken(), refreshToken(), etc.)
     const accessToken = tokens.accessToken();
     const refreshToken = tokens.hasRefreshToken() ? tokens.refreshToken() : null;
     const accessTokenExpiresAt = tokens.accessTokenExpiresAt();
+
+    console.log(`🔄 Token récupéré: accessToken=${accessToken ? '✅' : '❌'}, refreshToken=${refreshToken ? '✅' : '❌'}, expiresAt=${accessTokenExpiresAt}`);
 
     // Récupérer les informations du profil Google
     const oauth2Client = new google.auth.OAuth2(
@@ -176,6 +179,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
 
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data: profile } = await oauth2.userinfo.get();
+    console.log(`🔄 Profil récupéré: id=${profile.sub}, email=${profile.email}, name=${profile.name}`);
 
     // Créer ou mettre à jour l'utilisateur en base
     const user = await createUserFromGoogle(
@@ -184,6 +188,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
       refreshToken, // ← CRUCIAL : stocké lors de la première connexion uniquement
       accessTokenExpiresAt
     );
+    console.log(`🔄 Utilisateur ${user.id} créé/mis à jour en base`);
 
     // Créer la session Lucia
     const session = await lucia.createSession(user.id, {});
@@ -196,7 +201,8 @@ app.get('/api/auth/google/callback', async (req, res) => {
     res.setHeader('Set-Cookie', sessionCookie.serialize());
     res.redirect(redirectTo);
   } catch (err) {
-    console.error('Erreur callback Google :', err.message);
+    console.error('❌ Erreur callback Google :', err.message);
+    if (err.stack) console.error(err.stack.split('\n').slice(0, 5).join('\n'));
     res.status(500).send('Erreur d\'authentification Google : ' + err.message);
   }
 });
@@ -303,11 +309,13 @@ ${process.env.SMTP_USER}`;
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════
-// ║  FONCTION D'ENVOI GMAIL (via OAuth2)
+// ║  FONCTION D'ENVOI GMAIL (via Gmail REST API / OAuth2)
 // ╚══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Envoie un email via Gmail API OAuth2 avec les tokens de l'utilisateur.
+ * Envoie un email via Gmail REST API OAuth2 avec les tokens de l'utilisateur.
+ * Utilise l'API REST gmail.users.messages.send (scope gmail.send) au lieu
+ * du SMTP (qui nécessite le scope large mail.google.com).
  * Gère automatiquement le rafraîchissement du token si expiré.
  *
  * @param {Object} user - Utilisateur connecté (doit avoir accessToken, refreshToken)
@@ -347,47 +355,70 @@ async function sendGmail(user, { to, subject, body, attachmentPaths = [] }) {
     }
   });
 
-  // 3. Construire le message MIME multipart avec pièces jointes
-  const nodemailer = require('nodemailer');
+  // 3. Construire le message MIME RFC822 multipart/mixed avec pièces jointes
+  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      type: 'OAuth2',
-      user: user.email,
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: user.refreshToken,
-      accessToken: user.accessToken,
-    },
-  });
+  let mimeParts = [];
 
-  // 4. Préparer les pièces jointes
-  const attachments = await Promise.all(
-    attachmentPaths.map(async (att) => {
-      const filePath = path.isAbsolute(att.path) ? att.path : path.join(__dirname, att.path);
-      return {
-        filename: att.filename,
-        path: filePath,
-        contentType: att.mimetype || 'application/pdf',
-      };
-    })
+  // Partie textuelle du message
+  mimeParts.push(
+    `--${boundary}\r\n` +
+    `Content-Type: text/plain; charset="UTF-8"\r\n` +
+    `Content-Transfer-Encoding: base64\r\n\r\n` +
+    Buffer.from(body).toString('base64')
   );
 
-  // 5. Envoyer l'email
+  // Pièces jointes
+  for (const att of attachmentPaths) {
+    const filePath = path.isAbsolute(att.path) ? att.path : path.join(__dirname, att.path);
+    try {
+      const fileBuffer = fs.readFileSync(filePath);
+      mimeParts.push(
+        `--${boundary}\r\n` +
+        `Content-Type: ${att.mimetype || 'application/pdf'}\r\n` +
+        `Content-Disposition: attachment; filename="${att.filename.replace(/"/g, '\\"')}"\r\n` +
+        `Content-Transfer-Encoding: base64\r\n\r\n` +
+        fileBuffer.toString('base64')
+      );
+    } catch (err) {
+      console.warn(`⚠️  Pièce jointe introuvable : ${filePath} — ignorée`);
+    }
+  }
+
+  mimeParts.push(`--${boundary}--`);
+
+  const rawMessage = [
+    `From: "${user.name || 'MOHAMMAD ANIKA'}" <${user.email}>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+    mimeParts.join('\r\n'),
+  ].join('\r\n');
+
+  // 4. Encoder en base64 URL-safe (RFC 4648)
+  const encodedMessage = Buffer.from(rawMessage)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  // 5. Envoyer via Gmail REST API
   try {
-    const info = await transporter.sendMail({
-      from: `"${user.name || 'MOHAMMAD ANIKA'}" <${user.email}>`,
-      to,
-      subject,
-      text: body,
-      attachments,
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+    const response = await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: { raw: encodedMessage },
     });
 
-    console.log(`✅ Mail Gmail envoyé à ${to} (Message ID: ${info.messageId})`);
+    console.log(`✅ Mail Gmail envoyé à ${to} (Message ID: ${response.data.id})`);
     return true;
   } catch (err) {
     console.error(`❌ Erreur envoi Gmail à ${to} :`, err.message);
+    if (err.response?.data?.error) {
+      console.error('   Détail API:', JSON.stringify(err.response.data.error, null, 2));
+    }
     throw err;
   }
 }
@@ -531,8 +562,15 @@ app.post('/api/send/:id', requireAuth, async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) return res.status(500).json({ error: 'Utilisateur introuvable.' });
 
-    if (user.authType === 'google' && user.accessToken && user.refreshToken) {
+    // ── LOG : Quels sont les tokens disponibles ? ─────────────────────────
+    console.log(`📧 Envoi pour user: ${user.email}, authType: ${user.authType}`);
+    console.log(`   accessToken: ${user.accessToken ? '✅ présent' : '❌ absent'}`);
+    console.log(`   refreshToken: ${user.refreshToken ? '✅ présent' : '❌ absent'}`);
+    console.log(`   tokenExpiresAt: ${user.tokenExpiresAt || '❌ null'}`);
+
+    if (user.authType === 'google' && user.accessToken) {
       // ── Envoi via Gmail API OAuth2 ──────────────────────────────────────
+      console.log('📧 → Branche Gmail API REST OAuth2');
       const attachmentPaths = documents.map(d => ({
         path: path.join(uploadsDir, d.userId, d.filename),
         filename: d.originalName,
@@ -546,8 +584,17 @@ app.post('/api/send/:id', requireAuth, async (req, res) => {
         attachmentPaths,
       });
 
+    } else if (user.authType === 'google' && !user.accessToken) {
+      // ── L'utilisateur est Google mais n'a pas de token → invalide ────────
+      console.error('❌ Utilisateur Google sans accessToken');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Token d\'accès Google manquant. Veuillez vous déconnecter et vous reconnecter.' 
+      });
+
     } else {
       // ── Fallback : envoi via Zimbra SOAP ────────────────────────────────
+      console.log('📧 → Branche Zimbra SOAP');
       const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
 
       if (!fs.existsSync(attachmentPath)) {
@@ -571,7 +618,8 @@ app.post('/api/send/:id', requireAuth, async (req, res) => {
     console.log(`✅ Mail envoyé à ${contact.email}`);
     res.json({ success: true });
   } catch (err) {
-    console.error(`❌ Erreur envoi à :`, err.message);
+    console.error(`❌ Erreur envoi à ${contact.email}:`, err.message);
+    if (err.stack) console.error(err.stack.split('\n').slice(0, 5).join('\n'));
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -594,9 +642,13 @@ app.post('/api/send-all', requireAuth, async (req, res) => {
     const results = [];
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
 
+    console.log(`📧 send-all: user ${user.email}, authType: ${user.authType}`);
+    console.log(`   accessToken: ${user.accessToken ? '✅' : '❌'}, refreshToken: ${user.refreshToken ? '✅' : '❌'}`);
+
     for (const contact of pending) {
       try {
-        if (user.authType === 'google' && user.accessToken && user.refreshToken) {
+        if (user.authType === 'google' && user.accessToken) {
+          console.log(`📧 send-all → Gmail API pour ${contact.email}`);
           const attachmentPaths = documents.map(d => ({
             path: path.join(uploadsDir, d.userId, d.filename),
             filename: d.originalName,
@@ -609,7 +661,10 @@ app.post('/api/send-all', requireAuth, async (req, res) => {
             body: contact.body,
             attachmentPaths,
           });
+        } else if (user.authType === 'google' && !user.accessToken) {
+          throw new Error('Token d\'accès Google manquant. Reconnectez-vous.');
         } else {
+          console.log(`📧 send-all → Zimbra SOAP pour ${contact.email}`);
           if (!fs.existsSync(attachmentPath)) {
             throw new Error('Fichier CV_LETTRE_DE_RECOMMANDATION.pdf introuvable.');
           }
@@ -756,18 +811,22 @@ app.delete('/api/documents/:id', requireAuth, async (req, res) => {
 // ─── Routes de test (conservées mais non protégées par auth pour debug) ──────
 app.post('/api/test-send', async (req, res) => {
   try {
+    const to = req.body?.to || 'hidayacine01@gmail.com';
+    const subject = req.body?.subject || 'Test envoi mail + pièce jointe — Zimbra SOAP';
+    const body = req.body?.body || `Ceci est un mail de test envoyé via l'API SOAP Zimbra.\n\nCompte : ${process.env.SMTP_USER}\nServeur : ${process.env.ZIMBRA_URL}`;
+
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
     const hasAttachment  = fs.existsSync(attachmentPath);
 
     await zimbraClient.sendEmail({
-      to:             'hidayacine01@gmail.com',
-      subject:        'Test envoi mail + pièce jointe — Zimbra SOAP',
-      body:           `Ceci est un mail de test envoyé via l'API SOAP Zimbra.\n\nCompte : ${process.env.SMTP_USER}\nServeur : ${process.env.ZIMBRA_URL}\nPièce jointe : ${hasAttachment ? 'CV_LETTRE_DE_RECOMMANDATION.pdf ✅' : 'absente ❌'}`,
+      to,
+      subject,
+      body,
       attachmentPath: hasAttachment ? attachmentPath : undefined,
     });
 
-    console.log('✅ Mail de test envoyé à hidayacine01@gmail.com');
-    res.json({ success: true, message: 'Mail de test envoyé avec succès' });
+    console.log(`✅ Mail de test envoyé à ${to}`);
+    res.json({ success: true, message: `Mail de test envoyé à ${to}` });
   } catch (err) {
     console.error('❌ Erreur envoi mail de test :', err.message);
     res.status(500).json({ success: false, error: err.message });

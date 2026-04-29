@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mailcandid:
     build:
@@ -20,7 +18,9 @@ services:
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
       - PORT=3001
       # ── Base de données SQLite ───────────────────────────────────────────
-      - DATABASE_URL=${DATABASE_URL:-file:./dev.db}
+      #    Le chemin doit correspondre au point de montage du volume sqlite_data
+      #    (monté sur /app/prisma/). Le fichier sera persistant entre les redémarrages.
+      - DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db}
     volumes:
       # Monte le PDF depuis la machine locale (ne pas l'inclure dans l'image)
       - ./CV_LETTRE_DE_RECOMMANDATION.pdf:/app/CV_LETTRE_DE_RECOMMANDATION.pdf:ro
