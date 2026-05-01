@@ -510,6 +510,7 @@ app.put('/api/contacts/:id', requireAuth, async (req, res) => {
     const updateData = {};
     if (req.body.subject !== undefined) updateData.subject = req.body.subject;
     if (req.body.body    !== undefined) updateData.body    = req.body.body;
+    if (req.body.status  !== undefined) updateData.status  = req.body.status;
 
     const contact = await prisma.contact.update({
       where: { id },

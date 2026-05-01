@@ -189,6 +189,52 @@
             </div>
           </div>
           <div class="toolbar-right">
+            <button class="btn-secondary" id="selectModeBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              Sélectionner
+            </button>
+            <!-- Batch Action Bar (cachée par défaut) -->
+            <div class="batch-bar" id="batchBar" style="display:none">
+              <div class="batch-count" id="batchCount">0 sélectionné</div>
+              <button class="btn-batch" id="batchSelectAllBtn" title="Tout sélectionner">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                </svg>
+                Tout
+              </button>
+              <button class="btn-batch btn-batch-send" id="batchSendBtn" title="Envoyer la sélection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                Envoyer
+              </button>
+              <button class="btn-batch btn-batch-pending" id="batchPendingBtn" title="Mettre en attente">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Attente
+              </button>
+              <button class="btn-batch btn-batch-delete" id="batchDeleteBtn" title="Supprimer la sélection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                  <path d="M10 11v6"></path><path d="M14 11v6"></path>
+                  <path d="M9 6V4h6v2"></path>
+                </svg>
+                Supprimer
+              </button>
+              <button class="btn-batch btn-batch-cancel" id="batchCancelBtn" title="Annuler la sélection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
             <button class="btn-secondary" id="resetBtn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="1 4 1 10 7 10"></polyline>
@@ -261,7 +307,7 @@
     </main>
   </section>
 
-  <!-- ═══════════════════════════════════ MODAL ════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════ MODAL DÉTAIL CONTACT ═══════════════════ -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal" id="modal">
 
@@ -350,6 +396,66 @@
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
             Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ MODAL BATCH (actions groupées) ═════════ -->
+  <div class="modal-overlay" id="batchModalOverlay">
+    <div class="modal modal-batch" id="batchModal">
+      <div class="modal-batch-glow"></div>
+      <div class="modal-batch-content">
+        <!-- Header -->
+        <div class="modal-batch-header">
+          <div class="batch-modal-icon" id="batchModalIcon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="batch-modal-title" id="batchModalTitle">Confirmer l'action</h3>
+          <button class="modal-close-btn" id="batchModalCloseBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Confirmation Content -->
+        <div class="batch-modal-confirm" id="batchModalConfirm">
+          <p class="batch-modal-desc" id="batchModalDesc">Vous allez effectuer cette action sur <strong>3 contact(s)</strong></p>
+          <div class="batch-modal-list" id="batchModalList"></div>
+        </div>
+
+        <!-- Progress Content (caché par défaut) -->
+        <div class="batch-modal-progress" id="batchModalProgress" style="display:none">
+          <div class="batch-progress-header">
+            <div class="progress-spinner" style="width:18px;height:18px;"></div>
+            <span id="batchProgressStatus">Envoi en cours…</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="batchProgressFill"></div>
+          </div>
+          <div class="batch-progress-details">
+            <span id="batchProgressCount">0/0</span>
+            <span class="batch-progress-pct" id="batchProgressPct">0%</span>
+          </div>
+          <div class="batch-progress-log" id="batchProgressLog">
+            <!-- Logs individuels insérés ici -->
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="batch-modal-footer" id="batchModalFooter">
+          <button class="btn-ghost" id="batchModalCancelBtn">Annuler</button>
+          <button class="btn-success" id="batchModalConfirmBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Confirmer
           </button>
         </div>
       </div>

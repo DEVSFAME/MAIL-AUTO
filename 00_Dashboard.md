@@ -48,14 +48,14 @@
 ## 📝 Notes de Tâches
 
 ### 🚨 Priorité 1 : Réparer le démarrage du serveur
-- [ ] Rendre `zimbra-client.js` lazy (pas d'appel réseau au `require()`)
-- [ ] Redémarrer le serveur et tester `GET /api/me`
-- [ ] Vérifier que toutes les routes répondent
+- [x] Rendre `zimbra-client.js` lazy (pas d'appel réseau au `require()`)
+- [x] Redémarrer le serveur et tester `GET /api/me`
+- [x] Vérifier que toutes les routes répondent
 
 ### 🔄 Priorité 2 : Tester le flux OAuth2
-- [ ] Démarrer ngrok : `ngrok http --domain=... 3000`
-- [ ] Mettre à jour `GOOGLE_REDIRECT_URI` dans `.env`
-- [ ] Tester connexion Google + callback + création session
+- [x] Démarrer ngrok : `ngrok http --domain=... 3000`
+- [x] Mettre à jour `GOOGLE_REDIRECT_URI` dans `.env`
+- [x] Tester connexion Google + callback + création session
 
 ### 📧 Priorité 3 : Tester l'envoi Gmail
 - [x] Ajouter les identifiants Google corrects
