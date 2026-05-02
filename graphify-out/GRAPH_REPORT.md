@@ -1,11 +1,11 @@
-# Graph Report - Automatisation MAIL  (2026-05-01)
+# Graph Report - Automatisation MAIL  (2026-05-02)
 
 ## Corpus Check
-- 7 files · ~16,173 words
+- 10 files · ~21,350 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 60 nodes · 128 edges · 8 communities detected
+- 63 nodes · 128 edges · 8 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -33,13 +33,13 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `uploadDocuments()` --calls--> `showToast()`  [EXTRACTED]
-  public/app.js → public/app.js  _Bridges community 0 → community 9_
+  public/app.js → public/app.js  _Bridges community 0 → community 8_
 - `handleBatchSend()` --calls--> `showToast()`  [EXTRACTED]
   public/app.js → public/app.js  _Bridges community 0 → community 1_
 - `checkAuth()` --calls--> `api()`  [EXTRACTED]
   public/app.js → public/app.js  _Bridges community 0 → community 6_
 - `init()` --calls--> `showAppSection()`  [EXTRACTED]
-  public/app.js → public/app.js  _Bridges community 8 → community 6_
+  public/app.js → public/app.js  _Bridges community 9 → community 6_
 - `handleLogout()` --calls--> `exitSelectMode()`  [EXTRACTED]
   public/app.js → public/app.js  _Bridges community 6 → community 1_
 
@@ -71,11 +71,11 @@ Nodes (4): checkAuth(), handleLogout(), init(), showLoginSection()
 
 ### Community 8 - "Community 8"
 Cohesion: 0.67
-Nodes (3): getInitials(), openModal(), showAppSection()
+Nodes (3): loadDocuments(), renderDocuments(), uploadDocuments()
 
 ### Community 9 - "Community 9"
 Cohesion: 0.67
-Nodes (3): loadDocuments(), renderDocuments(), uploadDocuments()
+Nodes (3): getInitials(), openModal(), showAppSection()
 
 ## Knowledge Gaps
 - **Thin community `Community 5`** (4 nodes): `generateEmail()`, `mimeEncodeHeader()`, `sendGmail()`, `server.js`
@@ -84,9 +84,9 @@ Nodes (3): loadDocuments(), renderDocuments(), uploadDocuments()
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `api()` connect `Community 0` to `Community 9`, `Community 3`, `Community 6`, `Community 1`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
-- **Why does `showToast()` connect `Community 0` to `Community 9`, `Community 3`, `Community 1`?**
+- **Why does `api()` connect `Community 0` to `Community 8`, `Community 1`, `Community 3`, `Community 6`?**
+  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `showToast()` connect `Community 0` to `Community 8`, `Community 1`, `Community 3`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
 - **Why does `handleBatchSend()` connect `Community 1` to `Community 0`, `Community 3`?**
   _High betweenness centrality (0.005) - this node is a cross-community bridge._
