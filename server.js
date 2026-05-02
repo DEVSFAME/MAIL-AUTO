@@ -207,6 +207,12 @@ app.get('/api/auth/google/callback', async (req, res) => {
   }
 });
 
+// ─── GET /api/auth/zimbra — Page de connexion Zimbra ───────────────────────
+app.get('/api/auth/zimbra', (req, res) => {
+  // Simple vérification de l'API - ne fait rien d'autre que confirmer que l'API est active
+  res.json({ message: 'Endpoint Zimbra GET disponible' });
+});
+
 // ─── POST /api/auth/zimbra — Connexion via Zimbra (compte partagé) ───────────
 app.post('/api/auth/zimbra', async (req, res) => {
   try {
@@ -218,12 +224,11 @@ app.post('/api/auth/zimbra', async (req, res) => {
     // Créer la session Lucia
     const session = await lucia.createSession(user.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
-    const cookieHeader = sessionCookie.serialize();
 
     // S'assurer que les contacts existants (sans userId) sont rattachés
     // (déjà fait dans createUserFromZimbra, mais on refait par sécurité)
 
-    res.setHeader('Set-Cookie', cookieHeader);
+    res.setHeader('Set-Cookie', sessionCookie.serialize());
     res.json({ success: true, user: { id: user.id, email: user.email, name: user.name, authType: user.authType } });
   } catch (err) {
     console.error('Erreur connexion Zimbra :', err.message);
@@ -231,7 +236,7 @@ app.post('/api/auth/zimbra', async (req, res) => {
   }
 });
 
-// ─── GET /api/auth/logout — Déconnexion ───────────────────────────────────────
+// ─── POST /api/auth/logout — Déconnexion ───────────────────────────────────────
 app.post('/api/auth/logout', async (req, res) => {
   try {
     const sessionId = lucia.readSessionCookie(req.headers.cookie || '');
@@ -248,6 +253,7 @@ app.post('/api/auth/logout', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 // ─── GET /api/me — Vérifier si l'utilisateur est connecté ────────────────────
 app.get('/api/me', async (req, res) => {
