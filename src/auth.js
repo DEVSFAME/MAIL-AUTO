@@ -25,7 +25,7 @@ const lucia = new Lucia(
   {
     sessionCookie: {
       attributes: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV,
         sameSite: 'lax',
       },
     },
@@ -140,11 +140,12 @@ async function createUserFromZimbra(username) {
   }
 
   // Créer un nouvel utilisateur Zimbra
+  const zimbraDisplayName = process.env.ZIMBRA_DISPLAY_NAME || 'Mohammad Anika';
   user = await prisma.user.create({
     data: {
       zimbraUsername: username,
       email: username,
-      name: 'Utilisateur Zimbra',
+      name: zimbraDisplayName,
       authType: 'zimbra',
     },
   });

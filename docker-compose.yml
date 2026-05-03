@@ -9,6 +9,7 @@ services:
       - "3001:3001"
     environment:
       - NODE_ENV=production
+      - LOCAL_DEV=true
       # ── Variables d'environnement (à définir dans .env) ──────────────────
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}

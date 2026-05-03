@@ -232,6 +232,13 @@
     contacts    = [];
     documents   = [];
     exitSelectMode();
+    // Nettoyer les cookies côté client (forcer la déconnexion même si le serveur échoue)
+    document.cookie.split(';').forEach(c => {
+      const cookie = c.trim().split('=')[0];
+      if (cookie.includes('auth_session') || cookie.includes('session')) {
+        document.cookie = `${cookie}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      }
+    });
     showLoginSection();
   }
 
@@ -967,14 +974,43 @@
     window.location.href = `${API}/api/auth/google`;
   });
 
-  zimbraLoginBtn.addEventListener('click', () => {
-    window.location.href = `${API}/api/auth/zimbra`;
-  });
-
   logoutBtn.addEventListener('click', handleLogout);
 
-  // ── Upload ──
-  browseBtn.addEventListener('click', () => fileInput.click());
+  zimbraLoginBtn.addEventListener('click', async () => {
+    // Désactiver le bouton et afficher l'état de chargement
+    const originalText = zimbraLoginBtn.innerHTML;
+    zimbraLoginBtn.disabled = true;
+    zimbraLoginBtn.innerHTML = `
+      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      Connexion en cours…
+    `;
+    try {
+      const res = await fetch(`${API}/api/auth/zimbra`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Erreur serveur' }));
+        showToast(err.error || 'Erreur de connexion Zimbra', 'error', 5000);
+        return;
+      }
+      // Recharger la page pour afficher l'application connectée
+      window.location.reload();
+    } catch (err) {
+      // Erreur réseau (fetch impossible, timeout, etc.)
+      console.error('❌ Erreur réseau Zimbra :', err.message);
+      showToast(
+        'Impossible de contacter le serveur. Vérifiez votre connexion réseau.',
+        'error',
+        7000
+      );
+    } finally {
+      // Restaurer le bouton
+      zimbraLoginBtn.disabled = false;
+      zimbraLoginBtn.innerHTML = originalText;
+    }
+  });
+      
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1037,6 +1073,9 @@
       uploadProgress.style.display = 'none';
     }
   });
+
+  // ── Browse button ──
+  browseBtn.addEventListener('click', () => fileInput.click());
 
   // ── Filters & Search ──
   filterTabs.forEach(tab => {
