@@ -6,6 +6,7 @@ yarn-error.log*
 package-lock.json
 
 # ─── Environnement & Identifiants (CRITIQUE : PROTÉGER ABSOLUMENT) ────────────
+GOOGLE-KEY
 .env
 .env.local
 .env.*.local

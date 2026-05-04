@@ -1,5 +1,28 @@
 require('dotenv').config();
 
+// ─── Filet de sécurité : capture les exceptions non rattrapées ────────────────
+process.on('uncaughtException', (err) => {
+  const timestamp = new Date().toISOString();
+  console.error(`\n╔══════════════════════════════════════════════════════════╗`);
+  console.error(`║  UNCAUGHT EXCEPTION » ${timestamp.padEnd(26)}║`);
+  console.error(`╠══════════════════════════════════════════════════════════╣`);
+  console.error(`║  Message : ${(err?.message || String(err)).padEnd(38)}║`);
+  console.error(`╚══════════════════════════════════════════════════════════╝`);
+  console.error(err.stack || '');
+  // NE PAS exit(1) — laisser le processus vivre, les requêtes futures continuent
+});
+
+process.on('unhandledRejection', (reason) => {
+  const timestamp = new Date().toISOString();
+  const msg = reason?.message || String(reason);
+  console.error(`\n╔══════════════════════════════════════════════════════════╗`);
+  console.error(`║  UNHANDLED REJECTION » ${timestamp.padEnd(25)}║`);
+  console.error(`╠══════════════════════════════════════════════════════════╣`);
+  console.error(`║  Message : ${msg.padEnd(42)}║`);
+  console.error(`╚══════════════════════════════════════════════════════════╝`);
+  console.error(reason?.stack || '');
+});
+
 // ─── Configuration fallback (si pas de fichier .env) ─────────────────────────
 if (!process.env.SMTP_USER) {
   process.env.SMTP_USER  = 'anika.mohammad@etu.univ-tours.fr';
@@ -23,15 +46,37 @@ const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 // ─── Client Zimbra SOAP (bypass restriction SMTP universitaire) ───────────────
-// Fonctionne en structure plate (public_html/) et en structure src/
 const zimbraClient = (() => {
   try { return require('./src/zimbra-client'); } catch (_) {}
   try { return require('./zimbra-client'); }    catch (_) {}
   throw new Error('zimbra-client.js introuvable (ni dans ./src/ ni à la racine)');
 })();
 
+// ─── Auth (Lucia + OAuth) ─────────────────────────────────────────────────────
+const { lucia, createUserFromZimbra, requireAuth } = require('./src/auth');
+
+// ─── Client Gmail API (envoi via token OAuth Google) ──────────────────────────
+const gmailClient = require('./src/gmail-client');
+
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// ─── Utilitaire de logging structuré ──────────────────────────────────────────
+function logError(context, error, extra = {}) {
+  const timestamp = new Date().toISOString();
+  const stack = error?.stack || (error instanceof Error ? error.stack : new Error().stack);
+  const message = error?.message || String(error || 'Unknown error');
+
+  console.error(`
+╔══════════════════════════════════════════════════════╗
+║  ERROR » ${timestamp.padEnd(37)}║
+╠══════════════════════════════════════════════════════╣
+║  Context   : ${String(context).padEnd(40)}║
+║  Message   : ${message.padEnd(40)}║
+║  Extra     : ${JSON.stringify(extra).padEnd(40)}║
+╚══════════════════════════════════════════════════════╝
+${stack}`);
+}
 
 // ─── CORS — Autorise les requêtes depuis Hostinger, ngrok et localhost ────────
 app.use(cors({
@@ -53,18 +98,16 @@ app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 
 // ─── Fichiers statiques ───────────────────────────────────────────────────────
-// Sert depuis public/ si le dossier existe (local), sinon depuis la racine (Hostinger)
 const publicDir = path.join(__dirname, 'public');
 const staticDir = fs.existsSync(publicDir) ? publicDir : __dirname;
 
-// Configuration optimisée pour Hostinger
 app.use(express.static(staticDir, {
-  maxAge: '1d', // Cache 1 jour pour la production
+  maxAge: '1d',
   etag: true,
   lastModified: true
 }));
 
-// Middleware de logging pour debug
+// ─── Middleware de logging ────────────────────────────────────────────────────
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
@@ -99,6 +142,201 @@ ${process.env.SMTP_USER}`;
 
   return { subject, body };
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AUTH — Routes d'authentification
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ─── POST /api/auth/zimbra — Connexion via Zimbra (SOAP) ──────────────────────
+app.post('/api/auth/zimbra', async (req, res) => {
+  try {
+    const username = process.env.SMTP_USER;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'SMTP_USER non configuré. Vérifiez le fichier .env.',
+      });
+    }
+
+    // 1. Vérifier que l'authentification Zimbra fonctionne
+    try {
+      await zimbraClient.authenticate();
+    } catch (authErr) {
+      logError('AuthZimbra-Authenticate', authErr, { username });
+      return res.status(401).json({
+        success: false,
+        error: 'Authentification Zimbra échouée. Vérifiez les identifiants SMTP.',
+      });
+    }
+
+    // 2. Créer ou récupérer l'utilisateur en base
+    const user = await createUserFromZimbra(username);
+
+    // 3. Créer une session Lucia
+    const session = await lucia.createSession(user.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    // 4. Retourner la session + infos utilisateur
+    res.appendHeader('Set-Cookie', sessionCookie.serialize());
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        authType: user.authType,
+      },
+    });
+
+    console.log(`✅ Connexion Zimbra réussie : ${username}`);
+  } catch (err) {
+    logError('AuthZimbra', err);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur serveur lors de la connexion Zimbra.',
+    });
+  }
+});
+
+// ─── GET /api/auth/google — Redirection Google OAuth (Arctic v3+ PKCE) ────────
+app.get('/api/auth/google', (req, res) => {
+  try {
+    const { googleAuth } = require('./src/auth');
+    const crypto = require('crypto');
+    const { generateCodeVerifier } = require('arctic');
+    const state = crypto.randomBytes(32).toString('hex');
+    const codeVerifier = generateCodeVerifier();
+    const url = googleAuth.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/gmail.send']);
+    url.searchParams.set('prompt', 'consent');
+    url.searchParams.set('access_type', 'offline');
+    // Stocker le state et le codeVerifier dans des cookies pour vérification au callback
+    res.cookie('oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 10 * 1000, // 10 min
+      sameSite: 'lax',
+    });
+    res.cookie('oauth_code_verifier', codeVerifier, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 10 * 1000, // 10 min
+      sameSite: 'lax',
+    });
+    res.redirect(url.toString());
+  } catch (err) {
+    logError('AuthGoogle', err);
+    res.status(500).json({ success: false, error: 'Erreur lors de la redirection Google.' });
+  }
+});
+
+// ─── Helper : parse un cookie spécifique depuis le header ──────────────────
+function getCookie(name) {
+  const cookies = typeof arguments[1] === 'string' ? arguments[1] : '';
+  const match = cookies.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+// ─── GET /api/auth/google/callback — Callback Google OAuth ────────────────────
+app.get('/api/auth/google/callback', async (req, res) => {
+  try {
+    const { googleAuth, createUserFromGoogle } = require('./src/auth');
+    const code = req.query.code;
+    const state = req.query.state;
+    const cookieHeader = req.headers.cookie || '';
+    const storedState = getCookie('oauth_state', cookieHeader);
+    const codeVerifier = getCookie('oauth_code_verifier', cookieHeader);
+
+    if (!code || !state || state !== storedState || !codeVerifier) {
+      return res.status(400).json({ success: false, error: 'OAuth invalide.' });
+    }
+
+    const tokens = await googleAuth.validateAuthorizationCode(code, codeVerifier);
+    const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.accessToken()}` },
+    });
+    const googleUser = await googleResponse.json();
+
+    // refreshToken peut être absent (Google ne le renvoie qu'au premier échange)
+    let refreshToken = null;
+    try { refreshToken = tokens.refreshToken(); } catch (_) {}
+
+    const user = await createUserFromGoogle(
+      googleUser,
+      tokens.accessToken(),
+      refreshToken,
+      new Date(Date.now() + (tokens.expiresIn || 3600) * 1000)
+    );
+
+    const session = await lucia.createSession(user.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    res.appendHeader('Set-Cookie', sessionCookie.serialize());
+    // Rediriger vers le frontend
+    res.redirect('/');
+  } catch (err) {
+    logError('AuthGoogleCallback', err);
+    res.status(500).json({ success: false, error: 'Erreur lors de l\'authentification Google.' });
+  }
+});
+
+// ─── Middleware d'authentification pour les routes protégées ───────────────
+app.use('/api', (req, res, next) => {
+  // Routes publiques : auth
+  if (req.path.startsWith('/auth/') || req.path === '/auth') {
+    return next();
+  }
+  // Route test-auth publique
+  if (req.path === '/test-auth') {
+    return next();
+  }
+  // Route test-send publique
+  if (req.path === '/test-send') {
+    return next();
+  }
+  requireAuth(req, res, next);
+});
+
+// ─── POST /api/auth/logout — Déconnexion ──────────────────────────────────────
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    const sessionId = lucia.readSessionCookie(req.headers.cookie || '');
+    if (sessionId) {
+      await lucia.invalidateSession(sessionId);
+    }
+    res.appendHeader('Set-Cookie', lucia.createBlankSessionCookie().serialize());
+    res.json({ success: true });
+  } catch (err) {
+    logError('AuthLogout', err);
+    res.status(500).json({ success: false, error: 'Erreur lors de la déconnexion.' });
+  }
+});
+
+// ─── GET /api/me — Profil de l'utilisateur connecté ──────────────────────────
+app.get('/api/me', async (req, res) => {
+  try {
+    const sessionId = lucia.readSessionCookie(req.headers.cookie || '');
+    if (!sessionId) return res.status(401).json({ error: 'Non authentifié.' });
+
+    const { session, user } = await lucia.validateSession(sessionId);
+    if (!session || !user) return res.status(401).json({ error: 'Session invalide.' });
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      authType: user.authType,
+    });
+  } catch (err) {
+    logError('AuthMe', err);
+    res.status(500).json({ error: 'Erreur lors de la récupération du profil.' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  CONTACTS — Routes protégées par requireAuth
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── POST /api/upload — Parse le fichier Excel et insère en base ──────────────
 app.post('/api/upload', upload.single('file'), async (req, res) => {
@@ -139,7 +377,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
     res.json({ success: true, contacts });
   } catch (err) {
-    console.error('Erreur parsing Excel :', err);
+    logError('UploadExcel', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -153,7 +391,7 @@ app.get('/api/contacts', async (req, res) => {
     });
     res.json(contacts);
   } catch (err) {
-    console.error('Erreur récupération contacts :', err);
+    logError('GetContacts', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -177,7 +415,7 @@ app.put('/api/contacts/:id', async (req, res) => {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Contact introuvable.' });
     }
-    console.error('Erreur mise à jour contact :', err);
+    logError('UpdateContact', err, { id: req.params.id });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -197,29 +435,77 @@ app.delete('/api/contacts/:id', async (req, res) => {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Contact introuvable.' });
     }
-    console.error('Erreur suppression contact :', err);
+    logError('DeleteContact', err, { id: req.params.id });
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ─── POST /api/send/:id — Envoyer un mail via Zimbra SOAP ────────────────────
+// ─── Helper : récupérer l'utilisateur complet (avec tokens) depuis la session ─
+async function getUserForSend(req) {
+  const sessionId = lucia.readSessionCookie(req.headers.cookie || '');
+  if (!sessionId) return null;
+  const { user } = await lucia.validateSession(sessionId);
+  if (!user) return null;
+  // Récupérer l'utilisateur complet depuis Prisma (inclut accessToken, refreshToken)
+  return await prisma.user.findUnique({ where: { id: user.id } });
+}
+
+// ─── Helper : envoyer un email (branchement Gmail vs Zimbra selon authType) ──
+async function sendEmailViaProvider(user, { to, subject, body, attachmentPath }) {
+  if (user.authType === 'google' && user.accessToken) {
+    // Envoi via Gmail API avec le token OAuth Google
+    const result = await gmailClient.sendEmail({
+      accessToken:   user.accessToken,
+      refreshToken:  user.refreshToken,
+      from:          `${user.name || 'MOHAMMAD ANIKA'} <${user.email}>`,
+      to,
+      subject,
+      body,
+      attachmentPath: attachmentPath && fs.existsSync(attachmentPath) ? attachmentPath : undefined,
+    });
+
+    // Si le token a été rafraîchi, mettre à jour en base
+    if (result.newAccessToken) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          accessToken:    result.newAccessToken,
+          tokenExpiresAt: result.newTokenExpiresAt,
+        },
+      });
+    }
+
+    return result;
+  } else {
+    // Fallback Zimbra SOAP (utilisateur zimbra ou google sans token)
+    await zimbraClient.sendEmail({
+      to:             to,
+      subject:        subject,
+      body:           body,
+      attachmentPath,
+    });
+    return { success: true };
+  }
+}
+
+// ─── POST /api/send/:id — Envoyer un mail (Gmail API ou Zimbra SOAP) ────────
 app.post('/api/send/:id', async (req, res) => {
+  let contact;
   try {
     const id = parseInt(req.params.id, 10);
-    const contact = await prisma.contact.findUnique({ where: { id } });
+    contact = await prisma.contact.findUnique({ where: { id } });
     if (!contact) return res.status(404).json({ error: 'Contact introuvable.' });
+
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
 
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
 
-    if (!fs.existsSync(attachmentPath)) {
-      return res.status(500).json({ success: false, error: 'Fichier CV_LETTRE_DE_RECOMMANDATION.pdf introuvable.' });
-    }
-
-    await zimbraClient.sendEmail({
+    await sendEmailViaProvider(user, {
       to:             contact.email,
       subject:        contact.subject,
       body:           contact.body,
-      attachmentPath,
+      attachmentPath: fs.existsSync(attachmentPath) ? attachmentPath : undefined,
     });
 
     await prisma.contact.update({
@@ -227,10 +513,11 @@ app.post('/api/send/:id', async (req, res) => {
       data: { status: 'sent' }
     });
 
-    console.log(`✅ Mail envoyé à ${contact.email}`);
-    res.json({ success: true });
+    const via = user.authType === 'google' ? 'Gmail API' : 'Zimbra SOAP';
+    console.log(`✅ Mail envoyé à ${contact.email} via ${via} (${user.email})`);
+    res.json({ success: true, via, from: user.email });
   } catch (err) {
-    console.error(`❌ Erreur envoi à :`, err.message);
+    logError('SendEmail', err, { id: req.params.id, email: contact?.email });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -238,20 +525,27 @@ app.post('/api/send/:id', async (req, res) => {
 // ─── POST /api/test-send — Envoyer un mail de test (avec pièce jointe) ───────
 app.post('/api/test-send', async (req, res) => {
   try {
+    const user = await getUserForSend(req);
+
+    // Si non authentifié, fallback Zimbra
+    const useGmail = user && user.authType === 'google' && user.accessToken;
+
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
     const hasAttachment  = fs.existsSync(attachmentPath);
+    const fromEmail = useGmail ? user.email : process.env.SMTP_USER;
+    const viaStr = useGmail ? 'Gmail API' : 'Zimbra SOAP';
 
-    await zimbraClient.sendEmail({
+    await sendEmailViaProvider(user || {}, {
       to:             'hidayacine01@gmail.com',
-      subject:        'Test envoi mail + pièce jointe — Zimbra SOAP',
-      body:           `Ceci est un mail de test envoyé via l'API SOAP Zimbra.\n\nCompte : ${process.env.SMTP_USER}\nServeur : ${process.env.ZIMBRA_URL}\nPièce jointe : ${hasAttachment ? 'CV_LETTRE_DE_RECOMMANDATION.pdf ✅' : 'absente ❌'}`,
+      subject:        `Test envoi mail + pièce jointe — ${viaStr}`,
+      body:           `Ceci est un mail de test envoyé via ${viaStr}.\n\nCompte expéditeur : ${fromEmail}\nServeur : ${useGmail ? 'Gmail API' : process.env.ZIMBRA_URL}\nPièce jointe : ${hasAttachment ? 'CV_LETTRE_DE_RECOMMANDATION.pdf ✅' : 'absente ❌'}`,
       attachmentPath: hasAttachment ? attachmentPath : undefined,
     });
 
-    console.log('✅ Mail de test (avec pièce jointe) envoyé à hidayacine01@gmail.com');
-    res.json({ success: true, message: 'Mail de test envoyé avec succès à hidayacine01@gmail.com (pièce jointe incluse)' });
+    console.log(`✅ Mail de test (${viaStr}) envoyé à hidayacine01@gmail.com depuis ${fromEmail}`);
+    res.json({ success: true, message: `Mail de test envoyé avec succès via ${viaStr} depuis ${fromEmail}` });
   } catch (err) {
-    console.error('❌ Erreur envoi mail de test :', err.message);
+    logError('TestSendEmail', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -262,7 +556,7 @@ app.get('/api/test-auth', async (req, res) => {
     const result = await zimbraClient.testConnection();
     res.json({ success: true, message: 'Authentification Zimbra réussie ✅', ...result });
   } catch (err) {
-    console.error('❌ Erreur auth Zimbra :', err.message);
+    logError('TestAuth', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -270,20 +564,24 @@ app.get('/api/test-auth', async (req, res) => {
 // ─── POST /api/send-all — Envoyer tous les mails en attente ──────────────────
 app.post('/api/send-all', async (req, res) => {
   try {
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
+
     const pending = await prisma.contact.findMany({
       where: { status: 'pending' }
     });
 
     const results = [];
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
+    const hasAttachment = fs.existsSync(attachmentPath);
 
     for (const contact of pending) {
       try {
-        await zimbraClient.sendEmail({
+        await sendEmailViaProvider(user, {
           to:             contact.email,
           subject:        contact.subject,
           body:           contact.body,
-          attachmentPath,
+          attachmentPath: hasAttachment ? attachmentPath : undefined,
         });
 
         await prisma.contact.update({
@@ -292,21 +590,154 @@ app.post('/api/send-all', async (req, res) => {
         });
 
         results.push({ id: contact.id, email: contact.email, success: true });
-        console.log(`✅ Mail envoyé à ${contact.email}`);
+        const via = user.authType === 'google' ? 'Gmail API' : 'Zimbra SOAP';
+        console.log(`✅ Mail envoyé à ${contact.email} via ${via}`);
       } catch (err) {
         results.push({ id: contact.id, email: contact.email, success: false, error: err.message });
-        console.error(`❌ Erreur envoi à ${contact.email} :`, err.message);
+        logError('SendAll-Contact', err, { id: contact.id, email: contact.email });
       }
 
-      // Délai de 1.5s entre chaque envoi pour éviter les limitations serveur
+      // Délai entre chaque envoi pour éviter les limitations serveur
       await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
     res.json({ success: true, results });
   } catch (err) {
-    console.error('Erreur send-all :', err);
+    logError('SendAll', err);
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  DOCUMENTS — Upload / gestion des pièces jointes (PDF)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const uploadsDir = path.join(__dirname, 'uploads', 'documents');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// ─── Multer diskStorage pour persistance des documents uploadés ───────────────
+const documentStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const safeName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    cb(null, safeName);
+  },
+});
+const uploadDocument = multer({
+  storage: documentStorage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 Mo max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Seuls les fichiers PDF sont acceptés.'));
+    }
+  },
+});
+
+// ─── GET /api/documents — Liste des documents de l'utilisateur ────────────────
+app.get('/api/documents', async (req, res) => {
+  try {
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
+
+    const documents = await prisma.document.findMany({
+      where: { userId: user.id },
+      orderBy: { uploadedAt: 'desc' },
+    });
+    res.json(documents);
+  } catch (err) {
+    logError('GetDocuments', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── POST /api/documents/upload — Upload d'un ou plusieurs PDF ────────────────
+app.post('/api/documents/upload', uploadDocument.array('documents', 5), async (req, res) => {
+  try {
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, error: 'Aucun fichier reçu.' });
+    }
+
+    // Vérifier la limite de 5 documents par utilisateur
+    const existingCount = await prisma.document.count({ where: { userId: user.id } });
+    if (existingCount + req.files.length > 5) {
+      // Nettoyer les fichiers déjà écrits sur le disque
+      req.files.forEach(f => fs.unlinkSync(f.path));
+      return res.status(400).json({ success: false, error: 'Limite de 5 documents atteinte.' });
+    }
+
+    const createdDocs = [];
+    for (const file of req.files) {
+      const doc = await prisma.document.create({
+        data: {
+          userId: user.id,
+          filename: file.filename,
+          originalName: file.originalname,
+          mimetype: file.mimetype || 'application/pdf',
+          size: file.size,
+        },
+      });
+      createdDocs.push(doc);
+    }
+
+    const documents = await prisma.document.findMany({
+      where: { userId: user.id },
+      orderBy: { uploadedAt: 'desc' },
+    });
+
+    res.json({ success: true, uploaded: createdDocs.length, documents });
+  } catch (err) {
+    logError('UploadDocuments', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── DELETE /api/documents/:id — Supprimer un document ────────────────────────
+app.delete('/api/documents/:id', async (req, res) => {
+  try {
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
+
+    const id = parseInt(req.params.id, 10);
+    const doc = await prisma.document.findUnique({ where: { id } });
+
+    if (!doc) return res.status(404).json({ error: 'Document introuvable.' });
+    if (doc.userId !== user.id) return res.status(403).json({ error: 'Accès refusé.' });
+
+    // Supprimer le fichier physique
+    const filePath = path.join(uploadsDir, doc.filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await prisma.document.delete({ where: { id } });
+
+    res.json({ success: true });
+  } catch (err) {
+    logError('DeleteDocument', err, { id: req.params.id });
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── Middleware global de capture d'erreurs (doit être APRÈS toutes les routes) ──
+app.use((err, req, res, next) => {
+  logError('GlobalErrorHandler', err, {
+    method: req.method,
+    path: req.path,
+    body: req.body ? JSON.stringify(req.body).substring(0, 200) : null,
+  });
+  res.status(500).json({
+    success: false,
+    error: process.env.NODE_ENV === 'production'
+      ? 'Erreur interne du serveur.'
+      : err.message || 'Erreur interne du serveur.',
+  });
 });
 
 // ─── Démarrage serveur ────────────────────────────────────────────────────────

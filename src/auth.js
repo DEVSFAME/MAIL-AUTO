@@ -159,11 +159,41 @@ async function createUserFromZimbra(username) {
   return user;
 }
 
+// ─── Helper : rafraîchir un access token Google (utilisé aussi par gmail-client) ──
+async function refreshGoogleToken(refreshToken) {
+  if (!refreshToken) {
+    throw new Error('Aucun refresh token disponible.');
+  }
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      grant_type:    'refresh_token',
+      refresh_token: refreshToken,
+    }).toString(),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Échec du rafraîchissement du token Google (${response.status}): ${errBody}`);
+  }
+
+  const data = await response.json();
+  return {
+    accessToken:  data.access_token,
+    expiresIn:    data.expires_in || 3600,
+  };
+}
+
 module.exports = {
   lucia,
   googleAuth,
   requireAuth,
   createUserFromGoogle,
   createUserFromZimbra,
+  refreshGoogleToken,
   prisma,
 };

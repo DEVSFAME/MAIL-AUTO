@@ -990,8 +990,20 @@
         credentials: 'include',
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Erreur serveur' }));
-        showToast(err.error || 'Erreur de connexion Zimbra', 'error', 5000);
+        // Tentative de parsing JSON, sinon fallback sur le texte brut + code HTTP
+        let errorMsg = `Erreur ${res.status} ${res.statusText}`;
+        try {
+          const body = await res.json();
+          errorMsg = body.error || body.message || errorMsg;
+        } catch {
+          // Si la réponse n'est pas du JSON, récupérer le texte brut
+          try {
+            const text = await res.text();
+            if (text) errorMsg = text.substring(0, 200);
+          } catch {}
+        }
+        console.error('❌ Échec connexion Zimbra :', errorMsg);
+        showToast(errorMsg, 'error', 7000);
         return;
       }
       // Recharger la page pour afficher l'application connectée
