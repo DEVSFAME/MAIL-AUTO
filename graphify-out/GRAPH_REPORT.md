@@ -1,7 +1,7 @@
-# Graph Report - Automatisation MAIL  (2026-05-04)
+# Graph Report - Automatisation MAIL  (2026-05-05)
 
 ## Corpus Check
-- 11 files · ~22,423 words
+- 11 files · ~23,144 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -47,7 +47,7 @@ Nodes (12): authenticate(), buildEnvelope(), escapeXml(), mimeEncodeHeader(), pa
 
 ### Community 2 - "Community 2"
 Cohesion: 0.28
-Nodes (3): loadDocuments(), renderDocuments(), uploadDocuments()
+Nodes (3): getInitials(), openModal(), showAppSection()
 
 ### Community 3 - "Community 3"
 Cohesion: 0.52
@@ -67,7 +67,7 @@ Nodes (4): checkAuth(), handleLogout(), init(), showLoginSection()
 
 ### Community 8 - "Community 8"
 Cohesion: 0.67
-Nodes (3): getInitials(), openModal(), showAppSection()
+Nodes (3): loadDocuments(), renderDocuments(), uploadDocuments()
 
 ## Knowledge Gaps
 - **Thin community `Community 4`** (6 nodes): `generateEmail()`, `getCookie()`, `getUserForSend()`, `logError()`, `sendEmailViaProvider()`, `server.js`

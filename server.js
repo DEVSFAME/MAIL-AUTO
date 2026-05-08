@@ -343,6 +343,9 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Aucun fichier reçu.' });
 
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
+
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
@@ -360,7 +363,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
         const { subject, body } = generateEmail({ name, structure, location, research });
 
-        return { name, structure, location, research, email, subject, body };
+        return { name, structure, location, research, email, subject, body, userId: user.id };
       })
       .filter(Boolean);
 
@@ -371,7 +374,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     await prisma.contact.createMany({ data: contactsData });
 
     const contacts = await prisma.contact.findMany({
-      where: { status: { not: 'deleted' } },
+      where: { userId: user.id, status: { not: 'deleted' } },
       orderBy: { id: 'asc' }
     });
 
@@ -382,11 +385,26 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// ─── GET /api/contacts — Liste des contacts actifs ───────────────────────────
+// ─── GET /api/contacts — Liste des contacts actifs (filtrés par utilisateur) ─
 app.get('/api/contacts', async (req, res) => {
   try {
+    // Récupérer l'utilisateur connecté (nécessaire pour filtrer)
+    const user = await getUserForSend(req);
+    const where = { status: { not: 'deleted' } };
+
+    if (user) {
+      // Filtrer par userId OU récupérer les contacts orphelins legacy (userId: null)
+      where.OR = [
+        { userId: user.id },
+        { userId: null },
+      ];
+    } else {
+      // Non authentifié : ne renvoyer que les contacts orphelins (legacy)
+      where.userId = null;
+    }
+
     const contacts = await prisma.contact.findMany({
-      where: { status: { not: 'deleted' } },
+      where,
       orderBy: { id: 'asc' }
     });
     res.json(contacts);
@@ -396,10 +414,20 @@ app.get('/api/contacts', async (req, res) => {
   }
 });
 
-// ─── PUT /api/contacts/:id — Modifier un mail ────────────────────────────────
+// ─── PUT /api/contacts/:id — Modifier un mail (vérifié ownership) ────────────
 app.put('/api/contacts/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const user = await getUserForSend(req);
+
+    // Vérifier que le contact existe
+    const existing = await prisma.contact.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Contact introuvable.' });
+
+    // Vérifier la propriété (autoriser les contacts orphelins pour transition legacy)
+    if (existing.userId !== null && existing.userId !== user?.id) {
+      return res.status(403).json({ error: 'Accès refusé. Ce contact ne vous appartient pas.' });
+    }
 
     const updateData = {};
     if (req.body.subject !== undefined) updateData.subject = req.body.subject;
@@ -420,10 +448,19 @@ app.put('/api/contacts/:id', async (req, res) => {
   }
 });
 
-// ─── DELETE /api/contacts/:id — Soft delete d'un contact ─────────────────────
+// ─── DELETE /api/contacts/:id — Soft delete d'un contact (vérifié ownership) ─
 app.delete('/api/contacts/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const user = await getUserForSend(req);
+
+    const existing = await prisma.contact.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'Contact introuvable.' });
+
+    // Vérifier la propriété (rejeter si le contact appartient à un autre utilisateur)
+    if (existing.userId !== null && existing.userId !== user?.id) {
+      return res.status(403).json({ error: 'Accès refusé. Ce contact ne vous appartient pas.' });
+    }
 
     await prisma.contact.update({
       where: { id },
@@ -499,6 +536,11 @@ app.post('/api/send/:id', async (req, res) => {
     const user = await getUserForSend(req);
     if (!user) return res.status(401).json({ error: 'Non authentifié.' });
 
+    // Vérifier la propriété du contact
+    if (contact.userId !== null && contact.userId !== user.id) {
+      return res.status(403).json({ error: 'Accès refusé. Ce contact ne vous appartient pas.' });
+    }
+
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
 
     await sendEmailViaProvider(user, {
@@ -561,14 +603,20 @@ app.get('/api/test-auth', async (req, res) => {
   }
 });
 
-// ─── POST /api/send-all — Envoyer tous les mails en attente ──────────────────
+// ─── POST /api/send-all — Envoyer tous les mails en attente (filtré par user) ─
 app.post('/api/send-all', async (req, res) => {
   try {
     const user = await getUserForSend(req);
     if (!user) return res.status(401).json({ error: 'Non authentifié.' });
 
     const pending = await prisma.contact.findMany({
-      where: { status: 'pending' }
+      where: {
+        status: 'pending',
+        OR: [
+          { userId: user.id },
+          { userId: null },
+        ],
+      }
     });
 
     const results = [];

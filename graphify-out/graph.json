@@ -43,7 +43,7 @@
       "label": "getUserForSend()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L444",
+      "source_location": "L481",
       "id": "automatisation_mail_server_getuserforsend",
       "community": 4,
       "norm_label": "getuserforsend()"
@@ -52,7 +52,7 @@
       "label": "sendEmailViaProvider()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L454",
+      "source_location": "L491",
       "id": "automatisation_mail_server_sendemailviaprovider",
       "community": 4,
       "norm_label": "sendemailviaprovider()"
@@ -126,7 +126,7 @@
       "source_file": "public/app.js",
       "source_location": "L120",
       "id": "public_app_getinitials",
-      "community": 8,
+      "community": 2,
       "norm_label": "getinitials()"
     },
     {
@@ -198,7 +198,7 @@
       "source_file": "public/app.js",
       "source_location": "L220",
       "id": "public_app_showappsection",
-      "community": 8,
+      "community": 2,
       "norm_label": "showappsection()"
     },
     {
@@ -216,7 +216,7 @@
       "source_file": "public/app.js",
       "source_location": "L249",
       "id": "public_app_loaddocuments",
-      "community": 2,
+      "community": 8,
       "norm_label": "loaddocuments()"
     },
     {
@@ -225,7 +225,7 @@
       "source_file": "public/app.js",
       "source_location": "L258",
       "id": "public_app_renderdocuments",
-      "community": 2,
+      "community": 8,
       "norm_label": "renderdocuments()"
     },
     {
@@ -234,7 +234,7 @@
       "source_file": "public/app.js",
       "source_location": "L304",
       "id": "public_app_uploaddocuments",
-      "community": 2,
+      "community": 8,
       "norm_label": "uploaddocuments()"
     },
     {
@@ -396,7 +396,7 @@
       "source_file": "public/app.js",
       "source_location": "L825",
       "id": "public_app_openmodal",
-      "community": 8,
+      "community": 2,
       "norm_label": "openmodal()"
     },
     {
@@ -574,7 +574,7 @@
       "label": "refreshGoogleToken()",
       "file_type": "code",
       "source_file": "src/auth.js",
-      "source_location": "L163",
+      "source_location": "L155",
       "id": "src_auth_refreshgoogletoken",
       "community": 6,
       "norm_label": "refreshgoogletoken()"
@@ -756,7 +756,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L444",
+      "source_location": "L481",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_getuserforsend",
@@ -768,7 +768,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L454",
+      "source_location": "L491",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_sendemailviaprovider",
@@ -2196,7 +2196,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/auth.js",
-      "source_location": "L163",
+      "source_location": "L155",
       "weight": 1.0,
       "_src": "src_auth_js",
       "_tgt": "src_auth_refreshgoogletoken",

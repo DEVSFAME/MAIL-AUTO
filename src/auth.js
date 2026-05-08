@@ -131,15 +131,12 @@ async function createUserFromZimbra(username) {
   });
 
   if (user) {
-    // Rattacher les contacts existants sans userId à cet utilisateur
-    await prisma.contact.updateMany({
-      where: { userId: null },
-      data: { userId: user.id },
-    });
+    // ⚠️ NE PLUS rattacher automatiquement les contacts orphelins
+    // (c'était la source du mélange de données multi-utilisateur)
     return user;
   }
 
-  // Créer un nouvel utilisateur Zimbra
+  // Créer un nouvel utilisateur Zimbra (sans rattacher les contacts orphelins)
   const zimbraDisplayName = process.env.ZIMBRA_DISPLAY_NAME || 'Mohammad Anika';
   user = await prisma.user.create({
     data: {
@@ -150,12 +147,7 @@ async function createUserFromZimbra(username) {
     },
   });
 
-  // Rattacher les contacts existants (sans userId) à ce nouvel utilisateur
-  await prisma.contact.updateMany({
-    where: { userId: null },
-    data: { userId: user.id },
-  });
-
+  // ⚠️ NE PLUS rattacher automatiquement les contacts orphelins
   return user;
 }
 
