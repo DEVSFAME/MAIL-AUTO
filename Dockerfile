@@ -1,11 +1,10 @@
 # =============================================================================
-#  DOCKERFILE — Automatisation MAIL (Backend Node.js + Prisma + SQLite)
+#  DOCKERFILE — Automatisation MAIL (Backend Node.js + Prisma + PostgreSQL)
 #  Multi-stage build optimisé : builder → production (image ultra-légère)
 #  Améliorations :
 #    - Suppression du fallback credentials en dur dans le code (sécurité)
 #    - Exécution des migrations Prisma au démarrage via entrypoint
-#    - Copie complète des node_modules depuis le builder (évite les conflits
-#      de peer dependencies et les recompilations de better-sqlite3)
+#    - Migration SQLite → PostgreSQL Neon (plus besoin de better-sqlite3)
 #    - Image finale plus petite (seulement production)
 #    - Healthcheck robuste avec wget
 #    - Gestion des permissions fine (non-root user)
@@ -14,8 +13,9 @@
 # ─── ÉTAPE 1 : Builder (node_modules complets) ────────────────────────────
 FROM node:20-alpine AS builder
 
-# Outils système nécessaires à la compilation (prisma, better-sqlite3 natif)
-RUN apk add --no-cache python3 make g++
+# ARG pour prisma generate — DATABASE_URL est requis par prisma.config.ts
+ARG DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
 
@@ -24,28 +24,17 @@ WORKDIR /app
 COPY package*.json ./
 
 # ── 2. Installer les dépendances ────────────────────────────────────────
-#    On garde --ignore-scripts seulement pour éviter prisma generate,
-#    mais better-sqlite3 nécessite sa compilation native. On la fait
-#    explicitement après avec node-gyp.
 #    --legacy-peer-deps nécessaire pour @lucia-auth/adapter-prisma qui n'est
 #    pas compatible avec @prisma/client@7.x (conflit de peer dependencies)
+#    --ignore-scripts évite prisma generate (fait explicitement ensuite)
 RUN npm ci --legacy-peer-deps --ignore-scripts
 
-# ── 3. Compiler le binding natif better-sqlite3 ─────────────────────────
-#    Étape critique : le binding natif doit être compilé pour l'architecture
-#    du conteneur (linux/arm64 + musl). Sans cette compilation, Prisma
-#    échouera au runtime avec "Could not locate the bindings file".
-RUN cd /app/node_modules/better-sqlite3 && \
-    npx node-gyp rebuild 2>&1 && \
-    node -e "require('better-sqlite3'); console.log('✅ better-sqlite3 bindings OK')"
-
-# ── 4. Copier Prisma (schéma + config) — layer séparé du npm install ───
+# ── 3. Copier Prisma (schéma + config) — layer séparé du npm install ───
 #    Layer 2 : si seul le schéma change, node_modules reste en cache
-#    prisma.config.ts est requis par Prisma v7+ à la place de url dans le schema
 COPY prisma/schema.prisma ./prisma/schema.prisma
 COPY prisma.config.ts ./
 
-# ── 5. Générer le client Prisma ─────────────────────────────────────────
+# ── 4. Générer le client Prisma ─────────────────────────────────────────
 #    Layer 3 : ne coûte que le temps de prisma generate (rapide)
 RUN npx prisma generate
 

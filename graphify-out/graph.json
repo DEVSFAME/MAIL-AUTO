@@ -16,7 +16,7 @@
       "label": "logError()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L65",
+      "source_location": "L66",
       "id": "automatisation_mail_server_logerror",
       "community": 4,
       "norm_label": "logerror()"
@@ -25,7 +25,7 @@
       "label": "generateEmail()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L117",
+      "source_location": "L118",
       "id": "automatisation_mail_server_generateemail",
       "community": 4,
       "norm_label": "generateemail()"
@@ -34,7 +34,7 @@
       "label": "getCookie()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L234",
+      "source_location": "L235",
       "id": "automatisation_mail_server_getcookie",
       "community": 4,
       "norm_label": "getcookie()"
@@ -43,7 +43,7 @@
       "label": "getUserForSend()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L481",
+      "source_location": "L482",
       "id": "automatisation_mail_server_getuserforsend",
       "community": 4,
       "norm_label": "getuserforsend()"
@@ -52,7 +52,7 @@
       "label": "sendEmailViaProvider()",
       "file_type": "code",
       "source_file": "server.js",
-      "source_location": "L491",
+      "source_location": "L492",
       "id": "automatisation_mail_server_sendemailviaprovider",
       "community": 4,
       "norm_label": "sendemailviaprovider()"
@@ -126,7 +126,7 @@
       "source_file": "public/app.js",
       "source_location": "L120",
       "id": "public_app_getinitials",
-      "community": 2,
+      "community": 6,
       "norm_label": "getinitials()"
     },
     {
@@ -180,7 +180,7 @@
       "source_file": "public/app.js",
       "source_location": "L205",
       "id": "public_app_checkauth",
-      "community": 7,
+      "community": 6,
       "norm_label": "checkauth()"
     },
     {
@@ -189,7 +189,7 @@
       "source_file": "public/app.js",
       "source_location": "L215",
       "id": "public_app_showloginsection",
-      "community": 7,
+      "community": 2,
       "norm_label": "showloginsection()"
     },
     {
@@ -198,7 +198,7 @@
       "source_file": "public/app.js",
       "source_location": "L220",
       "id": "public_app_showappsection",
-      "community": 2,
+      "community": 6,
       "norm_label": "showappsection()"
     },
     {
@@ -207,7 +207,7 @@
       "source_file": "public/app.js",
       "source_location": "L227",
       "id": "public_app_handlelogout",
-      "community": 7,
+      "community": 2,
       "norm_label": "handlelogout()"
     },
     {
@@ -396,7 +396,7 @@
       "source_file": "public/app.js",
       "source_location": "L825",
       "id": "public_app_openmodal",
-      "community": 2,
+      "community": 6,
       "norm_label": "openmodal()"
     },
     {
@@ -459,7 +459,7 @@
       "source_file": "public/app.js",
       "source_location": "L1179",
       "id": "public_app_init",
-      "community": 7,
+      "community": 6,
       "norm_label": "init()"
     },
     {
@@ -540,43 +540,43 @@
       "source_file": "src/auth.js",
       "source_location": "L1",
       "id": "src_auth_js",
-      "community": 6,
+      "community": 7,
       "norm_label": "auth.js"
     },
     {
       "label": "requireAuth()",
       "file_type": "code",
       "source_file": "src/auth.js",
-      "source_location": "L52",
+      "source_location": "L53",
       "id": "src_auth_requireauth",
-      "community": 6,
+      "community": 7,
       "norm_label": "requireauth()"
     },
     {
       "label": "createUserFromGoogle()",
       "file_type": "code",
       "source_file": "src/auth.js",
-      "source_location": "L75",
+      "source_location": "L76",
       "id": "src_auth_createuserfromgoogle",
-      "community": 6,
+      "community": 7,
       "norm_label": "createuserfromgoogle()"
     },
     {
       "label": "createUserFromZimbra()",
       "file_type": "code",
       "source_file": "src/auth.js",
-      "source_location": "L123",
+      "source_location": "L124",
       "id": "src_auth_createuserfromzimbra",
-      "community": 6,
+      "community": 7,
       "norm_label": "createuserfromzimbra()"
     },
     {
       "label": "refreshGoogleToken()",
       "file_type": "code",
       "source_file": "src/auth.js",
-      "source_location": "L155",
+      "source_location": "L156",
       "id": "src_auth_refreshgoogletoken",
-      "community": 6,
+      "community": 7,
       "norm_label": "refreshgoogletoken()"
     },
     {
@@ -720,7 +720,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L65",
+      "source_location": "L66",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_logerror",
@@ -732,7 +732,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L117",
+      "source_location": "L118",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_generateemail",
@@ -744,7 +744,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L234",
+      "source_location": "L235",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_getcookie",
@@ -756,7 +756,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L481",
+      "source_location": "L482",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_getuserforsend",
@@ -768,7 +768,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server.js",
-      "source_location": "L491",
+      "source_location": "L492",
       "weight": 1.0,
       "_src": "server_js",
       "_tgt": "automatisation_mail_server_sendemailviaprovider",
@@ -2160,7 +2160,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/auth.js",
-      "source_location": "L52",
+      "source_location": "L53",
       "weight": 1.0,
       "_src": "src_auth_js",
       "_tgt": "src_auth_requireauth",
@@ -2172,7 +2172,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/auth.js",
-      "source_location": "L75",
+      "source_location": "L76",
       "weight": 1.0,
       "_src": "src_auth_js",
       "_tgt": "src_auth_createuserfromgoogle",
@@ -2184,7 +2184,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/auth.js",
-      "source_location": "L123",
+      "source_location": "L124",
       "weight": 1.0,
       "_src": "src_auth_js",
       "_tgt": "src_auth_createuserfromzimbra",
@@ -2196,7 +2196,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/auth.js",
-      "source_location": "L155",
+      "source_location": "L156",
       "weight": 1.0,
       "_src": "src_auth_js",
       "_tgt": "src_auth_refreshgoogletoken",

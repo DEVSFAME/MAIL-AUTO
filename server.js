@@ -38,12 +38,13 @@ const XLSX       = require('xlsx');
 const path       = require('path');
 const fs         = require('fs');
 
-// ─── Prisma (SQLite persistante) ──────────────────────────────────────────────
-const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+// ─── Prisma (PostgreSQL Neon) ──────────────────────────────────────────────────
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('./src/generated/prisma');
 
-const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
 
 // ─── Client Zimbra SOAP (bypass restriction SMTP universitaire) ───────────────
 const zimbraClient = (() => {

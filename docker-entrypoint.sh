@@ -36,26 +36,11 @@ echo "📦 Configuration de la base de données..."
 
 cd /app
 
-# Forcer DATABASE_URL dans l'environnement pour Prisma
-export DATABASE_URL="${DATABASE_URL:-file:./dev.db}"
-
 echo "   📁 Base : $DATABASE_URL"
+echo "   → La base de données PostgreSQL Neon est gérée en externe"
+echo "   → (migrations non requises au démarrage)"
 
-# 1. Essayer migrate deploy d'abord (si des migrations existent)
-echo "   → Migration via prisma migrate deploy..."
-npx prisma migrate deploy 2>&1 || true
-
-# 2. db push pour s'assurer que le schéma est à jour
-echo "   → Synchronisation du schéma (prisma db push)..."
-npx prisma db push --accept-data-loss 2>&1 || true
-
-# 3. S'assurer que les fichiers de la base ont les bons droits pour appuser
-# Donner les droits uniquement sur la base de données et les uploads
-DB_FILE="$(echo "$DATABASE_URL" | sed 's/file://')"
-if [ -f "$DB_FILE" ]; then
-    chown appuser:appgroup "$DB_FILE"
-    chown appuser:appgroup "$(dirname "$DB_FILE")" 2>/dev/null || true
-fi
+# S'assurer que les uploads ont les bons droits
 chown -R appuser:appgroup /app/uploads 2>/dev/null || true
 
 # ── Vérifier que le client Prisma est correctement généré ───────────────────

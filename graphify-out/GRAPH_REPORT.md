@@ -1,7 +1,7 @@
-# Graph Report - Automatisation MAIL  (2026-05-05)
+# Graph Report - Automatisation MAIL  (2026-05-08)
 
 ## Corpus Check
-- 11 files · ~23,144 words
+- 11 files · ~23,172 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -16,7 +16,7 @@
 - [[_COMMUNITY_Community 3|Community 3]]
 - [[_COMMUNITY_Community 4|Community 4]]
 - [[_COMMUNITY_Community 5|Community 5]]
-- [[_COMMUNITY_Community 7|Community 7]]
+- [[_COMMUNITY_Community 6|Community 6]]
 - [[_COMMUNITY_Community 8|Community 8]]
 
 ## God Nodes (most connected - your core abstractions)
@@ -46,8 +46,8 @@ Cohesion: 0.27
 Nodes (12): authenticate(), buildEnvelope(), escapeXml(), mimeEncodeHeader(), parseAttachmentId(), parseAuthToken(), parseLifetime(), parseSoapFault() (+4 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.28
-Nodes (3): getInitials(), openModal(), showAppSection()
+Cohesion: 0.29
+Nodes (2): handleLogout(), showLoginSection()
 
 ### Community 3 - "Community 3"
 Cohesion: 0.52
@@ -61,15 +61,17 @@ Nodes (1): sendEmailViaProvider()
 Cohesion: 0.6
 Nodes (5): getFilteredContacts(), renderContactSelection(), selectAllContacts(), toggleSelectContact(), updateBatchUI()
 
-### Community 7 - "Community 7"
-Cohesion: 0.5
-Nodes (4): checkAuth(), handleLogout(), init(), showLoginSection()
+### Community 6 - "Community 6"
+Cohesion: 0.4
+Nodes (5): checkAuth(), getInitials(), init(), openModal(), showAppSection()
 
 ### Community 8 - "Community 8"
 Cohesion: 0.67
 Nodes (3): loadDocuments(), renderDocuments(), uploadDocuments()
 
 ## Knowledge Gaps
+- **Thin community `Community 2`** (8 nodes): `$()`, `formatDate()`, `formatSize()`, `handleEdit()`, `handleLogout()`, `app.js`, `showLoginSection()`, `truncate()`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 4`** (6 nodes): `generateEmail()`, `getCookie()`, `getUserForSend()`, `logError()`, `sendEmailViaProvider()`, `server.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
