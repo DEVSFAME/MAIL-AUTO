@@ -23,12 +23,29 @@
   let batchSending    = false;
   let batchCancelled  = false;
 
+  // Campaign modal state
+  let campaignHeaders      = [];
+  let campaignRows         = [];
+  let campaignEmailCol     = null;
+
   // ─── DOM refs ───────────────────────────────────────────────────────────────
   const $ = (id) => document.getElementById(id);
+
+  // ─── Campaign Modal DOM refs ─────────────────────────────────────────────────
+  const campaignModalOverlay   = $('campaignModalOverlay');
+  const campaignModalCloseBtn  = $('campaignModalCloseBtn');
+  const campaignTagsBar        = $('campaignTagsBar');
+  const detectedEmailColEl     = $('detectedEmailCol');
+  const campaignSubjectInput   = $('campaignSubject');
+  const campaignBodyTextarea   = $('campaignBody');
+  const campaignNameColumnSelect = $('campaignNameColumn');
+  const campaignCancelBtn      = $('campaignCancelBtn');
+  const campaignGenerateBtn    = $('campaignGenerateBtn');
 
   const loginSection      = $('loginSection');
   const appSection        = $('appSection');
   const googleLoginBtn    = $('googleLoginBtn');
+  const outlookLoginBtn   = $('outlookLoginBtn');
   const zimbraLoginBtn    = $('zimbraLoginBtn');
   const logoutBtn         = $('logoutBtn');
   const userAvatar        = $('userAvatar');
@@ -232,7 +249,6 @@
     contacts    = [];
     documents   = [];
     exitSelectMode();
-    // Nettoyer les cookies côté client (forcer la déconnexion même si le serveur échoue)
     document.cookie.split(';').forEach(c => {
       const cookie = c.trim().split('=')[0];
       if (cookie.includes('auth_session') || cookie.includes('session')) {
@@ -257,12 +273,10 @@
 
   function renderDocuments() {
     docCount.textContent = `(${documents.length}/5)`;
-
     if (documents.length === 0) {
       documentsList.innerHTML = '<div class="documents-empty">Aucun document upload\u00e9. Ajoutez vos CV et lettres de motivation (PDF).</div>';
       return;
     }
-
     documentsList.innerHTML = documents.map(doc => `
       <div class="document-item" data-id="${doc.id}">
         <div class="document-icon">
@@ -285,7 +299,6 @@
         </button>
       </div>
     `).join('');
-
     documentsList.querySelectorAll('.document-delete').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -310,19 +323,16 @@
       }
       formData.append('documents', file);
     }
-
     try {
       const result = await fetch(`${API}/api/documents/upload`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
       });
-
       if (!result.ok) {
         const err = await result.json();
         throw new Error(err.error || `Erreur ${result.status}`);
       }
-
       const data = await result.json();
       documents = data.documents;
       renderDocuments();
@@ -339,7 +349,6 @@
   async function loadContacts() {
     try {
       contacts = await api('/api/contacts');
-      // Nettoyer les IDs sélectionnés qui n'existent plus
       if (selectMode) {
         const validIds = new Set(contacts.map(c => c.id));
         for (const id of selectedIds) {
@@ -369,29 +378,24 @@
     } else if (currentFilter === 'sent') {
       filtered = contacts.filter(c => c.status === 'sent');
     }
-
     const query = searchInput.value.toLowerCase().trim();
     if (query) {
       filtered = filtered.filter(c =>
         (c.name || '').toLowerCase().includes(query) ||
-        (c.structure || '').toLowerCase().includes(query) ||
         (c.email || '').toLowerCase().includes(query) ||
-        (c.location || '').toLowerCase().includes(query)
+        (c.subject || '').toLowerCase().includes(query)
       );
     }
-
     return filtered;
   }
 
   function renderContacts() {
     const filtered = getFilteredContacts();
-
     if (filtered.length === 0) {
       contactsGrid.innerHTML = '';
       emptyState.style.display = 'block';
       return;
     }
-
     emptyState.style.display = 'none';
     contactsGrid.innerHTML = filtered.map(c => {
       const initials = getInitials(c.name);
@@ -413,7 +417,7 @@
             <div class="card-avatar">${initials}</div>
             <div class="card-body">
               <div class="card-name">${c.name || 'Sans nom'}</div>
-              <div class="card-sublabel">${c.structure || c.location || ''}</div>
+              <div class="card-sublabel">${c.email || ''}</div>
             </div>
             <span class="card-badge ${badgeClass}">${badgeText}</span>
           </div>
@@ -426,34 +430,22 @@
       `;
     }).join('');
 
-    // Event listeners
     contactsGrid.querySelectorAll('.contact-card').forEach(card => {
       const id = parseInt(card.dataset.id, 10);
-
       card.addEventListener('click', (e) => {
-        // Si on a cliqué sur la checkbox ou son label, ne rien faire (le change event gère)
         if (e.target.closest('.card-checkbox')) return;
-
         if (selectMode) {
-          // En mode sélection : toggle la sélection
           toggleSelectContact(id);
         } else {
-          // Hors mode sélection : ouvrir le modal de détail
           const contact = contacts.find(c => c.id === id);
           if (contact) openModal(contact);
         }
       });
-
-      // Gestion de la checkbox
       const checkbox = card.querySelector('.card-checkbox input');
       if (checkbox) {
         checkbox.addEventListener('change', (e) => {
           e.stopPropagation();
-          if (e.target.checked) {
-            selectedIds.add(id);
-          } else {
-            selectedIds.delete(id);
-          }
+          if (e.target.checked) { selectedIds.add(id); } else { selectedIds.delete(id); }
           updateBatchUI();
           renderContactSelection();
         });
@@ -461,14 +453,11 @@
     });
   }
 
-  // Met à jour uniquement la classe 'selected' sans re-render toutes les cards
   function renderContactSelection() {
     contactsGrid.querySelectorAll('.contact-card').forEach(card => {
       const id = parseInt(card.dataset.id, 10);
       const cb = card.querySelector('.card-checkbox input');
-      if (cb) {
-        cb.checked = selectedIds.has(id);
-      }
+      if (cb) { cb.checked = selectedIds.has(id); }
       card.classList.toggle('selected', selectedIds.has(id));
     });
   }
@@ -479,10 +468,7 @@
 
   function toggleSelectMode() {
     selectMode = !selectMode;
-    if (!selectMode) {
-      exitSelectMode();
-      return;
-    }
+    if (!selectMode) { exitSelectMode(); return; }
     selectedIds.clear();
     selectModeBtn.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -519,24 +505,16 @@
   }
 
   function toggleSelectContact(id) {
-    if (selectedIds.has(id)) {
-      selectedIds.delete(id);
-    } else {
-      selectedIds.add(id);
-    }
+    if (selectedIds.has(id)) { selectedIds.delete(id); } else { selectedIds.add(id); }
     updateBatchUI();
     renderContactSelection();
   }
 
   function selectAllContacts() {
     const filtered = getFilteredContacts();
-    // Si tous sont déjà sélectionnés, tout désélectionner
-    const allSelected = filtered.every(c => selectedIds.has(c.id));
-    if (allSelected) {
-      filtered.forEach(c => selectedIds.delete(c.id));
-    } else {
-      filtered.forEach(c => selectedIds.add(c.id));
-    }
+    const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id));
+    if (allSelected) { filtered.forEach(c => selectedIds.delete(c.id)); }
+    else { filtered.forEach(c => selectedIds.add(c.id)); }
     updateBatchUI();
     renderContactSelection();
   }
@@ -544,16 +522,12 @@
   function updateBatchUI() {
     const count = selectedIds.size;
     batchCount.textContent = count === 0 ? '0 s\u00e9lectionn\u00e9' : `${count} s\u00e9lectionn\u00e9${count > 1 ? 's' : ''}`;
-
-    // Désactiver les actions si rien n'est sélectionné
     batchSendBtn.style.opacity = count === 0 ? '0.4' : '1';
     batchPendingBtn.style.opacity = count === 0 ? '0.4' : '1';
     batchDeleteBtn.style.opacity = count === 0 ? '0.4' : '1';
     batchSendBtn.style.pointerEvents = count === 0 ? 'none' : 'auto';
     batchPendingBtn.style.pointerEvents = count === 0 ? 'none' : 'auto';
     batchDeleteBtn.style.pointerEvents = count === 0 ? 'none' : 'auto';
-
-    // Texte du bouton Tout
     const filtered = getFilteredContacts();
     const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id));
     batchSelectAllBtn.innerHTML = allSelected
@@ -566,41 +540,14 @@
   // =====================================================================
 
   function openBatchModal(action) {
-    if (selectedIds.size === 0) {
-      showToast('Aucun contact s\u00e9lectionn\u00e9', 'warning');
-      return;
-    }
-
+    if (selectedIds.size === 0) { showToast('Aucun contact s\u00e9lectionn\u00e9', 'warning'); return; }
     const selectedContacts = contacts.filter(c => selectedIds.has(c.id));
-
-    // Configurer l'icône et le titre selon l'action
     const config = {
-      send: {
-        icon: 'send',
-        title: 'Envoyer les mails s\u00e9lectionn\u00e9s',
-        desc: `Vous allez envoyer un mail \u00e0 <strong>${selectedIds.size} contact(s)</strong>`,
-        confirmText: 'Envoyer',
-        confirmClass: 'btn-success',
-      },
-      delete: {
-        icon: 'delete',
-        title: 'Supprimer les contacts s\u00e9lectionn\u00e9s',
-        desc: `Vous allez supprimer <strong>${selectedIds.size} contact(s)</strong>`,
-        confirmText: 'Supprimer',
-        confirmClass: 'btn-danger',
-      },
-      pending: {
-        icon: 'pending',
-        title: 'Mettre en attente',
-        desc: `Vous allez marquer <strong>${selectedIds.size} contact(s)</strong> comme "En attente"`,
-        confirmText: 'Confirmer',
-        confirmClass: 'btn-warning',
-      },
+      send: { icon: 'send', title: 'Envoyer les mails s\u00e9lectionn\u00e9s', desc: `Vous allez envoyer un mail \u00e0 <strong>${selectedIds.size} contact(s)</strong>`, confirmText: 'Envoyer', confirmClass: 'btn-success' },
+      delete: { icon: 'delete', title: 'Supprimer les contacts s\u00e9lectionn\u00e9s', desc: `Vous allez supprimer <strong>${selectedIds.size} contact(s)</strong>`, confirmText: 'Supprimer', confirmClass: 'btn-danger' },
+      pending: { icon: 'pending', title: 'Mettre en attente', desc: `Vous allez marquer <strong>${selectedIds.size} contact(s)</strong> comme "En attente"`, confirmText: 'Confirmer', confirmClass: 'btn-warning' },
     };
-
     const cfg = config[action] || config.send;
-
-    // Icône
     batchModalIcon.className = `batch-modal-icon ${cfg.icon}`;
     const icons = {
       send: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>',
@@ -608,13 +555,10 @@
       pending: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
     };
     batchModalIcon.innerHTML = icons[cfg.icon] || icons.send;
-
     batchModalTitle.textContent = cfg.title;
     batchModalDesc.innerHTML = cfg.desc;
     batchModalConfirmBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> ${cfg.confirmText}`;
     batchModalConfirmBtn.className = cfg.confirmClass;
-
-    // Liste des contacts
     batchModalList.innerHTML = selectedContacts.map(c => `
       <div class="batch-list-item">
         <span class="initials">${getInitials(c.name)}</span>
@@ -622,15 +566,10 @@
         <span class="list-email">${c.email}</span>
       </div>
     `).join('');
-
-    // Cacher la progression, montrer la confirmation
     batchModalConfirm.style.display = 'block';
     batchModalProgress.style.display = 'none';
     batchModalFooter.style.display = 'flex';
-
-    // Stocker l'action en cours sur le bouton confirmer
     batchModalConfirmBtn.dataset.action = action;
-
     batchModalOverlay.classList.add('show');
   }
 
@@ -644,102 +583,61 @@
   async function handleBatchConfirm() {
     const action = batchModalConfirmBtn.dataset.action;
     if (!action) return;
-
-    if (action === 'send') {
-      await handleBatchSend();
-    } else if (action === 'delete') {
-      await handleBatchDelete();
-    } else if (action === 'pending') {
-      await handleBatchPending();
-    }
+    if (action === 'send') { await handleBatchSend(); }
+    else if (action === 'delete') { await handleBatchDelete(); }
+    else if (action === 'pending') { await handleBatchPending(); }
   }
-
-  // ── BATCH SEND ──────────────────────────────────────────────────────────────
 
   async function handleBatchSend() {
     const selectedContacts = contacts.filter(c => selectedIds.has(c.id) && c.status !== 'sent');
-    if (selectedContacts.length === 0) {
-      showToast('Aucun contact non-envoy\u00e9 dans la s\u00e9lection', 'warning');
-      closeBatchModal();
-      return;
-    }
-
-    // Passer en mode progression
+    if (selectedContacts.length === 0) { showToast('Aucun contact non-envoy\u00e9 dans la s\u00e9lection', 'warning'); closeBatchModal(); return; }
     batchModalConfirm.style.display = 'none';
     batchModalProgress.style.display = 'block';
     batchModalFooter.style.display = 'none';
-
     batchSending = true;
     batchCancelled = false;
     batchProgressLog.innerHTML = '';
-
     const total = selectedContacts.length;
     let successCount = 0;
     let failCount = 0;
-
     for (let i = 0; i < total; i++) {
-      if (batchCancelled) {
-        addBatchLog('pending', '⏸️ Envoi annul\u00e9 par l\'utilisateur');
-        break;
-      }
-
+      if (batchCancelled) { addBatchLog('pending', '\u23F8\uFE0F Envoi annul\u00e9 par l\'utilisateur'); break; }
       const contact = selectedContacts[i];
       batchProgressStatus.textContent = `Envoi ${i + 1}/${total}...`;
       batchProgressFill.style.width = `${((i) / total) * 100}%`;
       batchProgressCount.textContent = `${i}/${total}`;
       batchProgressPct.textContent = `${Math.round((i / total) * 100)}%`;
-
-      addBatchLog('pending', `📤 Envoi \u00e0 ${contact.email}...`);
-
+      addBatchLog('pending', `\uD83D\uDCE4 Envoi \u00e0 ${contact.email}...`);
       try {
         await api(`/api/send/${contact.id}`, { method: 'POST' });
         successCount++;
-        addBatchLog('success', `✅ ${contact.email} — Envoy\u00e9`);
-        // Mettre à jour localement le statut
+        addBatchLog('success', `\u2705 ${contact.email} — Envoy\u00e9`);
         const idx = contacts.findIndex(c => c.id === contact.id);
         if (idx !== -1) contacts[idx].status = 'sent';
       } catch (err) {
         failCount++;
-        addBatchLog('error', `❌ ${contact.email} — ${err.message}`);
+        addBatchLog('error', `\u274C ${contact.email} — ${err.message}`);
       }
-
-      // Mise à jour barre
       const done = i + 1;
       batchProgressFill.style.width = `${(done / total) * 100}%`;
       batchProgressCount.textContent = `${done}/${total}`;
       batchProgressPct.textContent = `${Math.round((done / total) * 100)}%`;
-
-      // Délai de 1.5s entre chaque envoi (sauf dernier)
-      if (i < total - 1 && !batchCancelled) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
+      if (i < total - 1 && !batchCancelled) { await new Promise(resolve => setTimeout(resolve, 1500)); }
     }
-
     batchSending = false;
-
-    // Résumé final
-    batchProgressStatus.textContent = '✅ Envoi termin\u00e9';
+    batchProgressStatus.textContent = '\u2705 Envoi termin\u00e9';
     batchProgressFill.style.width = '100%';
     batchProgressPct.textContent = '100%';
-
     const msg = `${successCount}/${total} envoy\u00e9(s) avec succ\u00e8s`;
-    if (failCount > 0) {
-      showToast(`${msg}, ${failCount} \u00e9chec(s)`, 'warning', 5000);
-    } else {
-      showToast(msg + ' ✅', 'success', 4000);
-    }
-
-    // Revenir à l'état confirmation après 2 secondes, puis fermer le modal
+    if (failCount > 0) { showToast(`${msg}, ${failCount} \u00e9chec(s)`, 'warning', 5000); }
+    else { showToast(msg + ' \u2705', 'success', 4000); }
     setTimeout(() => {
       if (!batchModalOverlay.classList.contains('show')) return;
       batchModalProgress.style.display = 'none';
       batchModalConfirm.style.display = 'block';
       batchModalFooter.style.display = 'flex';
-      // Fermer automatiquement après 1 seconde supplémentaire
       setTimeout(closeBatchModal, 1000);
     }, 2000);
-
-    // Quitter le mode sélection et rafraîchir
     exitSelectMode();
     updateStats();
     renderContacts();
@@ -753,65 +651,37 @@
     batchProgressLog.scrollTop = batchProgressLog.scrollHeight;
   }
 
-  // ── BATCH DELETE ────────────────────────────────────────────────────────────
-
   async function handleBatchDelete() {
     const ids = Array.from(selectedIds);
     let successCount = 0;
     let failCount = 0;
-
     batchModalConfirmBtn.disabled = true;
     batchModalConfirmBtn.innerHTML = '<div class="progress-spinner" style="width:14px;height:14px;"></div> Suppression...';
-
     for (const id of ids) {
-      try {
-        await api(`/api/contacts/${id}`, { method: 'DELETE' });
-        successCount++;
-      } catch (err) {
-        failCount++;
-        console.error('Erreur suppression contact', id, err.message);
-      }
+      try { await api(`/api/contacts/${id}`, { method: 'DELETE' }); successCount++; }
+      catch (err) { failCount++; console.error('Erreur suppression contact', id, err.message); }
     }
-
     const msg = `${successCount} contact(s) supprim\u00e9(s)`;
-    if (failCount > 0) {
-      showToast(`${msg}, ${failCount} \u00e9chec(s)`, 'warning');
-    } else {
-      showToast(msg, 'info');
-    }
-
+    if (failCount > 0) { showToast(`${msg}, ${failCount} \u00e9chec(s)`, 'warning'); }
+    else { showToast(msg, 'info'); }
     closeBatchModal();
     exitSelectMode();
     await loadContacts();
   }
 
-  // ── BATCH PENDING ───────────────────────────────────────────────────────────
-
   async function handleBatchPending() {
     const ids = Array.from(selectedIds);
     let successCount = 0;
-
     batchModalConfirmBtn.disabled = true;
     batchModalConfirmBtn.innerHTML = '<div class="progress-spinner" style="width:14px;height:14px;"></div> Mise \u00e0 jour...';
-
     for (const id of ids) {
-      try {
-        await api(`/api/contacts/${id}`, {
-          method: 'PUT',
-          body: JSON.stringify({ status: 'pending' }),
-        });
-        successCount++;
-      } catch (err) {
-        console.error('Erreur mise en attente contact', id, err.message);
-      }
+      try { await api(`/api/contacts/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'pending' }) }); successCount++; }
+      catch (err) { console.error('Erreur mise en attente contact', id, err.message); }
     }
-
     showToast(`${successCount} contact(s) mis en attente`, 'success');
     closeBatchModal();
     exitSelectMode();
     await loadContacts();
-
-    // Basculer sur l'onglet "En attente"
     filterTabs.forEach(t => t.classList.remove('active'));
     document.querySelector('.filter-tab[data-filter="pending"]').classList.add('active');
     currentFilter = 'pending';
@@ -825,30 +695,24 @@
   function openModal(contact) {
     currentContact = contact;
     editing = false;
-
     modalAvatar.textContent       = getInitials(contact.name);
     modalContactName.textContent  = contact.name || 'Sans nom';
     modalStructure.textContent    = contact.structure || '';
     modalLocation.textContent     = contact.location || '';
-
     const displayEmail = contact.email || '';
     modalEmailLink.textContent    = displayEmail;
     modalEmailLink.href           = `mailto:${displayEmail}`;
     modalResearchTag.textContent  = contact.researchAxis || contact.research_axis || 'Recherche';
     mailSubject.value             = contact.subject || '';
     mailBody.value                = contact.body || contact.generatedBody || '';
-
     const isSent = contact.status === 'sent';
     btnSend.textContent = isSent ? 'D\u00e9j\u00e0 envoy\u00e9' : 'Envoyer';
     btnSend.disabled = isSent;
-    if (isSent) btnSend.classList.add('sent-state');
-    else btnSend.classList.remove('sent-state');
-
+    if (isSent) btnSend.classList.add('sent-state'); else btnSend.classList.remove('sent-state');
     mailSubject.readOnly = true;
     mailSubject.classList.remove('editing');
     mailBody.readOnly = true;
     mailBody.classList.remove('editing');
-
     modalOverlay.classList.add('show');
   }
 
@@ -864,9 +728,7 @@
       showToast('Contact supprim\u00e9', 'success');
       closeModal();
       await loadContacts();
-    } catch (err) {
-      showToast('Erreur : ' + err.message, 'error');
-    }
+    } catch (err) { showToast('Erreur : ' + err.message, 'error'); }
   }
 
   function handleEdit() {
@@ -880,14 +742,9 @@
 
   async function handleSendOne() {
     if (!currentContact) return;
-    if (currentContact.status === 'sent') {
-      showToast('D\u00e9j\u00e0 envoy\u00e9', 'warning');
-      return;
-    }
-
+    if (currentContact.status === 'sent') { showToast('D\u00e9j\u00e0 envoy\u00e9', 'warning'); return; }
     btnSend.disabled = true;
     btnSend.textContent = 'Envoi en cours...';
-
     try {
       await api(`/api/send/${currentContact.id}`, { method: 'POST' });
       showToast('Mail envoy\u00e9 \u00e0 ' + currentContact.email, 'success');
@@ -901,16 +758,12 @@
   }
 
   // =====================================================================
-  //  SEND ALL (Send-all modal legacy)
+  //  SEND ALL
   // =====================================================================
 
   function openSendAllModal() {
     const unsent = contacts.filter(c => c.status !== 'sent');
-    if (unsent.length === 0) {
-      showToast('Tous les contacts ont d\u00e9j\u00e0 \u00e9t\u00e9 envoy\u00e9s', 'info');
-      return;
-    }
-
+    if (unsent.length === 0) { showToast('Tous les contacts ont d\u00e9j\u00e0 \u00e9t\u00e9 envoy\u00e9s', 'info'); return; }
     sendAllText.innerHTML = `Vous allez envoyer un mail \u00e0 <strong>${unsent.length} contact(s)</strong>`;
     sendAllContent.style.display = 'block';
     sendAllProgress.style.display = 'none';
@@ -920,112 +773,234 @@
 
   async function handleSendAllConfirm() {
     const unsent = contacts.filter(c => c.status !== 'sent');
-    if (unsent.length === 0) {
-      showToast('Tous les contacts ont d\u00e9j\u00e0 \u00e9t\u00e9 envoy\u00e9s', 'info');
-      sendAllOverlay.classList.remove('show');
-      return;
-    }
-
+    if (unsent.length === 0) { showToast('Tous les contacts ont d\u00e9j\u00e0 \u00e9t\u00e9 envoy\u00e9s', 'info'); sendAllOverlay.classList.remove('show'); return; }
     sendAllContent.style.display = 'none';
     sendAllProgress.style.display = 'block';
     sendAllFooter.style.display = 'none';
-
     const total = unsent.length;
     let successCount = 0;
-
     for (let i = 0; i < total; i++) {
       const contact = unsent[i];
       progressFill.style.width = `${(i / total) * 100}%`;
       progressLabel.textContent = `${i + 1}/${total} — ${contact.email}`;
-
       try {
         await api(`/api/send/${contact.id}`, { method: 'POST' });
         successCount++;
         const idx = contacts.findIndex(c => c.id === contact.id);
         if (idx !== -1) contacts[idx].status = 'sent';
-      } catch (err) {
-        console.error('Erreur envoi', contact.email, err.message);
-      }
-
+      } catch (err) { console.error('Erreur envoi', contact.email, err.message); }
       progressFill.style.width = `${((i + 1) / total) * 100}%`;
-
-      if (i < total - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
+      if (i < total - 1) { await new Promise(resolve => setTimeout(resolve, 1500)); }
     }
-
-    progressLabel.textContent = `✅ ${successCount}/${total} envoy\u00e9(s)`;
+    progressLabel.textContent = `\u2705 ${successCount}/${total} envoy\u00e9(s)`;
     showToast(`${successCount}/${total} envoy\u00e9(s) avec succ\u00e8s`, successCount === total ? 'success' : 'warning', 5000);
-
-    setTimeout(() => {
-      sendAllOverlay.classList.remove('show');
-    }, 2000);
-
+    setTimeout(() => { sendAllOverlay.classList.remove('show'); }, 2000);
     updateStats();
     renderContacts();
   }
 
   // =====================================================================
-  //  EVENT BINDING
+  //  CAMPAIGN MODAL — Templating & Configuration
   // =====================================================================
 
-  // ── Auth ──
-  googleLoginBtn.addEventListener('click', () => {
-    window.location.href = `${API}/api/auth/google`;
-  });
+  /**
+   * Détecte automatiquement la colonne contenant les adresses email.
+   * Étape 1 : cherche une colonne nommée exactement "adresse mail" (insensible à la casse)
+   * Étape 2 : fallback par contenu — première colonne contenant "@" dans les 20 premières lignes
+   */
+  function detectEmailColumn(headers, rows) {
+    // Étape 1 : header exact "adresse mail"
+    const headerIndex = headers.findIndex(h => {
+      if (!h) return false;
+      return h.trim().toLowerCase() === 'adresse mail';
+    });
+    if (headerIndex !== -1) {
+      return { index: headerIndex, method: 'header', label: headers[headerIndex] };
+    }
 
-  logoutBtn.addEventListener('click', handleLogout);
-
-  zimbraLoginBtn.addEventListener('click', async () => {
-    // Désactiver le bouton et afficher l'état de chargement
-    const originalText = zimbraLoginBtn.innerHTML;
-    zimbraLoginBtn.disabled = true;
-    zimbraLoginBtn.innerHTML = `
-      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-      Connexion en cours…
-    `;
-    try {
-      const res = await fetch(`${API}/api/auth/zimbra`, {
-        method: 'POST',
-        credentials: 'include',
+    // Étape 2 : fallback par contenu
+    const sampleRows = rows.slice(0, Math.min(rows.length, 20));
+    for (let col = 0; col < headers.length; col++) {
+      const hasEmail = sampleRows.some(row => {
+        const val = String(row[col] || '').trim();
+        return val.includes('@');
       });
-      if (!res.ok) {
-        // Tentative de parsing JSON, sinon fallback sur le texte brut + code HTTP
-        let errorMsg = `Erreur ${res.status} ${res.statusText}`;
-        try {
-          const body = await res.json();
-          errorMsg = body.error || body.message || errorMsg;
-        } catch {
-          // Si la réponse n'est pas du JSON, récupérer le texte brut
-          try {
-            const text = await res.text();
-            if (text) errorMsg = text.substring(0, 200);
-          } catch {}
+      if (hasEmail) {
+        return { index: col, method: 'content', label: headers[col] };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Compile un template en remplaçant les variables {{NomColonne}} par leurs valeurs.
+   */
+  function compileTemplate(template, row, headers) {
+    return template.replace(/\{\{([^}]+)\}\}/g, (match, colName) => {
+      const trimmed = colName.trim();
+      const idx = headers.findIndex(h => h && h.trim() === trimmed);
+      if (idx !== -1) return String(row[idx] || '');
+      return match;
+    });
+  }
+
+  /**
+   * Insère une variable à la position du curseur dans l'élément actif (input ou textarea).
+   */
+  function insertVariableAtCursor(variableName) {
+    const activeEl = document.activeElement;
+    if (!activeEl || !['INPUT', 'TEXTAREA'].includes(activeEl.tagName)) {
+      // Si aucun champ n'a le focus, on focus le textarea et on insère
+      campaignBodyTextarea.focus();
+    }
+
+    const el = document.activeElement;
+    if (!el || !['INPUT', 'TEXTAREA'].includes(el.tagName)) return;
+
+    const placeholder = `{{${variableName}}}`;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const text = el.value;
+
+    el.value = text.substring(0, start) + placeholder + text.substring(end);
+    el.selectionStart = el.selectionEnd = start + placeholder.length;
+    el.focus();
+  }
+
+  /**
+   * Ouvre la modale de configuration de campagne après un upload réussi.
+   */
+  function openCampaignModal(headers, rows, emailCol) {
+    campaignHeaders = headers;
+    campaignRows = rows;
+    campaignEmailCol = emailCol;
+
+    // Réinitialiser les champs
+    campaignSubjectInput.value = '';
+    campaignBodyTextarea.value = '';
+
+    // Générer les tags — exclure la colonne email des tags (elle est automatique)
+    campaignTagsBar.innerHTML = headers
+      .filter((h, i) => h && i !== emailCol.index)
+      .map(h => `
+        <span class="campaign-tag" data-variable="${h}">{{${h}}}</span>
+      `).join('');
+
+    // Afficher la colonne email détectée
+    detectedEmailColEl.textContent = emailCol.label;
+
+    // Populer le select "Nom ou structure"
+    campaignNameColumnSelect.innerHTML = '<option value="">— Colonne ignorée (Sans nom) —</option>';
+    headers.forEach((h, i) => {
+      if (h && i !== emailCol.index) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = h;
+        campaignNameColumnSelect.appendChild(option);
+      }
+    });
+
+    // Bind les événements mousedown sur les tags (preventDefault pour ne pas perdre le focus)
+    campaignTagsBar.querySelectorAll('.campaign-tag').forEach(tag => {
+      tag.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const variableName = tag.dataset.variable;
+        // Restaurer le focus sur le dernier élément actif avant de cliquer
+        const lastFocused = document.activeElement;
+        if (lastFocused && ['INPUT', 'TEXTAREA'].includes(lastFocused.tagName)) {
+          lastFocused.focus();
         }
-        console.error('❌ Échec connexion Zimbra :', errorMsg);
-        showToast(errorMsg, 'error', 7000);
+        insertVariableAtCursor(variableName);
+      });
+    });
+
+    // Afficher la modale
+    campaignModalOverlay.classList.add('show');
+  }
+
+  function closeCampaignModal() {
+    campaignModalOverlay.classList.remove('show');
+    campaignHeaders = [];
+    campaignRows = [];
+    campaignEmailCol = null;
+  }
+
+  /**
+   * Handler du bouton "Générer la campagne" :
+   * compile le template pour chaque ligne, puis envoie tout au backend.
+   */
+  async function handleCampaignGenerate() {
+    const subjectTemplate = campaignSubjectInput.value.trim();
+    const bodyTemplate = campaignBodyTextarea.value.trim();
+
+    if (!subjectTemplate && !bodyTemplate) {
+      showToast('Veuillez remplir au moins le sujet ou le corps du message.', 'warning');
+      return;
+    }
+
+    if (!campaignEmailCol) {
+      showToast('Aucune colonne email détectée. Impossible de générer la campagne.', 'error');
+      return;
+    }
+
+    campaignGenerateBtn.disabled = true;
+    campaignGenerateBtn.innerHTML = '<div class="progress-spinner" style="width:16px;height:16px;"></div> Génération...';
+
+    try {
+      const nameColIndex = campaignNameColumnSelect.value !== '' ? parseInt(campaignNameColumnSelect.value, 10) : null;
+
+      const contactsData = campaignRows.map(row => {
+        const email = String(row[campaignEmailCol.index] || '').trim();
+        if (!email) return null;
+
+        // Construire le rawData (toutes les colonnes)
+        const rawData = {};
+        campaignHeaders.forEach((h, i) => {
+          if (h) rawData[h] = String(row[i] || '');
+        });
+
+        // Nom : valeur de la colonne sélectionnée, ou vide (affichera "Sans nom")
+        const contactName = nameColIndex !== null ? String(row[nameColIndex] || '').trim() : '';
+
+        return {
+          email,
+          name: contactName,
+          subject: compileTemplate(subjectTemplate, row, campaignHeaders),
+          body: compileTemplate(bodyTemplate, row, campaignHeaders),
+          rawData,
+        };
+      }).filter(Boolean);
+
+      if (contactsData.length === 0) {
+        showToast('Aucun contact avec une adresse email valide.', 'error');
+        campaignGenerateBtn.disabled = false;
+        campaignGenerateBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Générer la campagne';
         return;
       }
-      // Recharger la page pour afficher l'application connectée
-      window.location.reload();
+
+      const result = await api('/api/campaign', {
+        method: 'POST',
+        body: JSON.stringify({ contacts: contactsData }),
+      });
+
+      showToast(`${result.count} contact(s) créé(s) avec succès !`, 'success');
+      closeCampaignModal();
+      await loadContacts();
+      contactsSection.style.display = 'block';
     } catch (err) {
-      // Erreur réseau (fetch impossible, timeout, etc.)
-      console.error('❌ Erreur réseau Zimbra :', err.message);
-      showToast(
-        'Impossible de contacter le serveur. Vérifiez votre connexion réseau.',
-        'error',
-        7000
-      );
+      showToast('Erreur : ' + err.message, 'error');
     } finally {
-      // Restaurer le bouton
-      zimbraLoginBtn.disabled = false;
-      zimbraLoginBtn.innerHTML = originalText;
+      campaignGenerateBtn.disabled = false;
+      campaignGenerateBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg> Générer la campagne';
     }
-  });
-      
-  fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  }
+
+  // =====================================================================
+  //  UPLOAD HANDLER — Nouveau flux avec modale de configuration
+  // =====================================================================
+
+  async function handleFileUpload(file) {
     uploadProgress.style.display = 'flex';
     try {
       const formData = new FormData();
@@ -1039,54 +1014,122 @@
         const err = await result.json();
         throw new Error(err.error || 'Erreur upload');
       }
-      showToast('Fichier import\u00e9 avec succ\u00e8s', 'success');
-      await loadContacts();
-      contactsSection.style.display = 'block';
+
+      const data = await result.json();
+      // data.headers, data.rows, data.emailColumn
+
+      // Détecter la colonne email
+      const emailCol = detectEmailColumn(data.headers, data.rows);
+      if (!emailCol) {
+        showToast('Impossible de détecter une colonne email dans le fichier.', 'error');
+        return;
+      }
+
+      // Ouvrir la modale de configuration
+      openCampaignModal(data.headers, data.rows, emailCol);
+      showToast(`${data.rowCount} lignes détectées. Configurez votre message.`, 'info', 3000);
     } catch (err) {
       showToast('Erreur : ' + err.message, 'error');
     } finally {
       uploadProgress.style.display = 'none';
       fileInput.value = '';
     }
+  }
+
+  // =====================================================================
+  //  EVENT BINDING
+  // =====================================================================
+
+  // ── Auth ── (Event listeners attachés dans bindLoginEvents() appelé ci-dessous)
+  // ⚠️ On délègue à bindLoginEvents() pour garantir que les boutons sont bindés
+  // même si le DOM n'est pas encore entièrement chargé.
+
+  function bindLoginEvents() {
+    // ── Google Login ──
+    if (googleLoginBtn) {
+      googleLoginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('🔵 Clic sur Google Login — redirection vers', `${API}/api/auth/google`);
+        window.location.href = `${API}/api/auth/google`;
+      });
+      console.log('✅ Event listener Google Login attaché');
+    } else {
+      console.error('❌ Bouton Google Login (#googleLoginBtn) introuvable dans le DOM');
+    }
+
+    // ── Outlook Login ──
+    if (outlookLoginBtn) {
+      outlookLoginBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log('🔷 Clic sur Outlook Login — redirection vers', `${API}/api/auth/outlook`);
+        window.location.href = `${API}/api/auth/outlook`;
+      });
+      console.log('✅ Event listener Outlook Login attaché');
+    } else {
+      console.error('❌ Bouton Outlook Login (#outlookLoginBtn) introuvable dans le DOM');
+    }
+
+    // ── Zimbra Login ──
+    if (zimbraLoginBtn) {
+      zimbraLoginBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log('🟠 Clic sur Zimbra Login');
+        const originalText = zimbraLoginBtn.innerHTML;
+        zimbraLoginBtn.disabled = true;
+        zimbraLoginBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Connexion en cours…`;
+        try {
+          const res = await fetch(`${API}/api/auth/zimbra`, { method: 'POST', credentials: 'include' });
+          if (!res.ok) {
+            let errorMsg = `Erreur ${res.status} ${res.statusText}`;
+            try { const body = await res.json(); errorMsg = body.error || body.message || errorMsg; }
+            catch { try { const text = await res.text(); if (text) errorMsg = text.substring(0, 200); } catch {} }
+            console.error('❌ Échec connexion Zimbra :', errorMsg);
+            showToast(errorMsg, 'error', 7000);
+            return;
+          }
+          window.location.reload();
+        } catch (err) {
+          console.error('❌ Erreur réseau Zimbra :', err.message);
+          showToast('Impossible de contacter le serveur. Vérifiez votre connexion réseau.', 'error', 7000);
+        } finally {
+          zimbraLoginBtn.disabled = false;
+          zimbraLoginBtn.innerHTML = originalText;
+        }
+      });
+      console.log('✅ Event listener Zimbra Login attaché');
+    } else {
+      console.error('❌ Bouton Zimbra Login (#zimbraLoginBtn) introuvable dans le DOM');
+    }
+
+    // ── Logout ──
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+      console.log('✅ Event listener Logout attaché');
+    } else {
+      console.error('❌ Bouton Logout (#logoutBtn) introuvable dans le DOM');
+    }
+  }
+
+  // Attacher les events de login immédiatement, avant toute logique métier
+  bindLoginEvents();
+
+  // ── Upload — Nouveau flux via handleFileUpload ──
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await handleFileUpload(file);
   });
 
-  // Drag & Drop
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-  });
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
   dropZone.addEventListener('drop', async (e) => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     const file = e.dataTransfer.files[0];
     if (!file) return;
-    uploadProgress.style.display = 'flex';
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const result = await fetch(`${API}/api/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!result.ok) {
-        const err = await result.json();
-        throw new Error(err.error || 'Erreur upload');
-      }
-      showToast('Fichier import\u00e9 avec succ\u00e8s', 'success');
-      await loadContacts();
-      contactsSection.style.display = 'block';
-    } catch (err) {
-      showToast('Erreur : ' + err.message, 'error');
-    } finally {
-      uploadProgress.style.display = 'none';
-    }
+    await handleFileUpload(file);
   });
 
-  // ── Browse button ──
   browseBtn.addEventListener('click', () => fileInput.click());
 
   // ── Filters & Search ──
@@ -1099,10 +1142,7 @@
       renderContacts();
     });
   });
-
-  searchInput.addEventListener('input', () => {
-    renderContacts();
-  });
+  searchInput.addEventListener('input', () => { renderContacts(); });
 
   // ── Reset ──
   resetBtn.addEventListener('click', async () => {
@@ -1125,25 +1165,17 @@
   btnDelete.addEventListener('click', handleDelete);
   btnEdit.addEventListener('click', handleEdit);
   btnSend.addEventListener('click', handleSendOne);
-  modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) closeModal();
-  });
-  sendAllOverlay.addEventListener('click', (e) => {
-    if (e.target === sendAllOverlay) sendAllOverlay.classList.remove('show');
-  });
+  modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+  sendAllOverlay.addEventListener('click', (e) => { if (e.target === sendAllOverlay) sendAllOverlay.classList.remove('show'); });
 
   // ── Documents ──
   docUploadBtn.addEventListener('click', () => docFileInput.click());
-  docFileInput.addEventListener('change', async (e) => {
-    await uploadDocuments(e.target.files);
-    docFileInput.value = '';
-  });
+  docFileInput.addEventListener('change', async (e) => { await uploadDocuments(e.target.files); docFileInput.value = ''; });
 
   // ── Batch Selection ──
   selectModeBtn.addEventListener('click', toggleSelectMode);
   batchSelectAllBtn.addEventListener('click', selectAllContacts);
   batchCancelBtn.addEventListener('click', exitSelectMode);
-
   batchSendBtn.addEventListener('click', () => openBatchModal('send'));
   batchPendingBtn.addEventListener('click', () => openBatchModal('pending'));
   batchDeleteBtn.addEventListener('click', () => openBatchModal('delete'));
@@ -1152,16 +1184,22 @@
   batchModalCloseBtn.addEventListener('click', closeBatchModal);
   batchModalCancelBtn.addEventListener('click', closeBatchModal);
   batchModalConfirmBtn.addEventListener('click', handleBatchConfirm);
-  batchModalOverlay.addEventListener('click', (e) => {
-    if (e.target === batchModalOverlay && !batchSending) closeBatchModal();
-  });
+  batchModalOverlay.addEventListener('click', (e) => { if (e.target === batchModalOverlay && !batchSending) closeBatchModal(); });
 
-  // Annulation en cours d'envoi via Escape
+  // ── Campaign Modal events ──
+  campaignModalCloseBtn.addEventListener('click', closeCampaignModal);
+  campaignCancelBtn.addEventListener('click', closeCampaignModal);
+  campaignGenerateBtn.addEventListener('click', handleCampaignGenerate);
+  campaignModalOverlay.addEventListener('click', (e) => { if (e.target === campaignModalOverlay) closeCampaignModal(); });
+
+  // Annulation via Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (batchSending) {
         batchCancelled = true;
         showToast('Annulation en cours...', 'warning');
+      } else if (campaignModalOverlay.classList.contains('show')) {
+        closeCampaignModal();
       } else if (batchModalOverlay.classList.contains('show')) {
         closeBatchModal();
       } else if (modalOverlay.classList.contains('show')) {
@@ -1177,20 +1215,34 @@
   // =====================================================================
 
   async function init() {
-    const isLoggedIn = await checkAuth();
-    if (isLoggedIn && currentUser) {
-      showAppSection(currentUser);
-      await loadDocuments();
-      await loadContacts();
-      if (contacts.length > 0) {
-        contactsSection.style.display = 'block';
+    console.log('🚀 MailCandid init() — démarrage');
+    try {
+      const isLoggedIn = await checkAuth();
+      if (isLoggedIn && currentUser) {
+        console.log('✅ Utilisateur connecté :', currentUser.email);
+        showAppSection(currentUser);
+        await loadDocuments();
+        await loadContacts();
+        if (contacts.length > 0) {
+          contactsSection.style.display = 'block';
+        }
+      } else {
+        console.log('🔒 Aucune session active — affichage de la page de login');
+        showLoginSection();
       }
-    } else {
+    } catch (err) {
+      console.error('❌ Erreur dans init() :', err.message);
       showLoginSection();
     }
   }
 
-  init();
+  // Attendre que le DOM soit prêt avant d'initialiser l'application
+  if (document.readyState === 'loading') {
+    console.log('⏳ DOM en cours de chargement — attente de DOMContentLoaded...');
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    console.log('✅ DOM déjà prêt — lancement immédiat de init()');
+    init();
+  }
 
 })();
-

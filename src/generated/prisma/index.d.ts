@@ -1200,6 +1200,7 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: string | null
     googleId: string | null
+    microsoftId: string | null
     zimbraUsername: string | null
     email: string | null
     name: string | null
@@ -1215,6 +1216,7 @@ export namespace Prisma {
   export type UserMaxAggregateOutputType = {
     id: string | null
     googleId: string | null
+    microsoftId: string | null
     zimbraUsername: string | null
     email: string | null
     name: string | null
@@ -1230,6 +1232,7 @@ export namespace Prisma {
   export type UserCountAggregateOutputType = {
     id: number
     googleId: number
+    microsoftId: number
     zimbraUsername: number
     email: number
     name: number
@@ -1247,6 +1250,7 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     googleId?: true
+    microsoftId?: true
     zimbraUsername?: true
     email?: true
     name?: true
@@ -1262,6 +1266,7 @@ export namespace Prisma {
   export type UserMaxAggregateInputType = {
     id?: true
     googleId?: true
+    microsoftId?: true
     zimbraUsername?: true
     email?: true
     name?: true
@@ -1277,6 +1282,7 @@ export namespace Prisma {
   export type UserCountAggregateInputType = {
     id?: true
     googleId?: true
+    microsoftId?: true
     zimbraUsername?: true
     email?: true
     name?: true
@@ -1365,6 +1371,7 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     googleId: string | null
+    microsoftId: string | null
     zimbraUsername: string | null
     email: string | null
     name: string | null
@@ -1397,6 +1404,7 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     googleId?: boolean
+    microsoftId?: boolean
     zimbraUsername?: boolean
     email?: boolean
     name?: boolean
@@ -1416,6 +1424,7 @@ export namespace Prisma {
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     googleId?: boolean
+    microsoftId?: boolean
     zimbraUsername?: boolean
     email?: boolean
     name?: boolean
@@ -1431,6 +1440,7 @@ export namespace Prisma {
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     googleId?: boolean
+    microsoftId?: boolean
     zimbraUsername?: boolean
     email?: boolean
     name?: boolean
@@ -1446,6 +1456,7 @@ export namespace Prisma {
   export type UserSelectScalar = {
     id?: boolean
     googleId?: boolean
+    microsoftId?: boolean
     zimbraUsername?: boolean
     email?: boolean
     name?: boolean
@@ -1458,7 +1469,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "googleId" | "zimbraUsername" | "email" | "name" | "picture" | "accessToken" | "refreshToken" | "tokenExpiresAt" | "authType" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "googleId" | "microsoftId" | "zimbraUsername" | "email" | "name" | "picture" | "accessToken" | "refreshToken" | "tokenExpiresAt" | "authType" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     contacts?: boolean | User$contactsArgs<ExtArgs>
@@ -1478,6 +1489,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       googleId: string | null
+      microsoftId: string | null
       zimbraUsername: string | null
       email: string | null
       name: string | null
@@ -1916,6 +1928,7 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly googleId: FieldRef<"User", 'String'>
+    readonly microsoftId: FieldRef<"User", 'String'>
     readonly zimbraUsername: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
@@ -2160,7 +2173,6 @@ export namespace Prisma {
      * The data used to create many Users.
      */
     data: UserCreateManyInput | UserCreateManyInput[]
-    skipDuplicates?: boolean
   }
 
   /**
@@ -2179,7 +2191,6 @@ export namespace Prisma {
      * The data used to create many Users.
      */
     data: UserCreateManyInput | UserCreateManyInput[]
-    skipDuplicates?: boolean
   }
 
   /**
@@ -3261,7 +3272,6 @@ export namespace Prisma {
      * The data used to create many Sessions.
      */
     data: SessionCreateManyInput | SessionCreateManyInput[]
-    skipDuplicates?: boolean
   }
 
   /**
@@ -3280,7 +3290,6 @@ export namespace Prisma {
      * The data used to create many Sessions.
      */
     data: SessionCreateManyInput | SessionCreateManyInput[]
-    skipDuplicates?: boolean
     /**
      * Choose, which related nodes to fetch as well
      */
@@ -4388,7 +4397,6 @@ export namespace Prisma {
      * The data used to create many Documents.
      */
     data: DocumentCreateManyInput | DocumentCreateManyInput[]
-    skipDuplicates?: boolean
   }
 
   /**
@@ -4407,7 +4415,6 @@ export namespace Prisma {
      * The data used to create many Documents.
      */
     data: DocumentCreateManyInput | DocumentCreateManyInput[]
-    skipDuplicates?: boolean
     /**
      * Choose, which related nodes to fetch as well
      */
@@ -4596,40 +4603,37 @@ export namespace Prisma {
   export type ContactMinAggregateOutputType = {
     id: number | null
     userId: string | null
-    name: string | null
-    structure: string | null
-    location: string | null
-    research: string | null
+    rawData: string | null
     email: string | null
+    name: string | null
     subject: string | null
     body: string | null
     status: string | null
+    createdAt: Date | null
   }
 
   export type ContactMaxAggregateOutputType = {
     id: number | null
     userId: string | null
-    name: string | null
-    structure: string | null
-    location: string | null
-    research: string | null
+    rawData: string | null
     email: string | null
+    name: string | null
     subject: string | null
     body: string | null
     status: string | null
+    createdAt: Date | null
   }
 
   export type ContactCountAggregateOutputType = {
     id: number
     userId: number
-    name: number
-    structure: number
-    location: number
-    research: number
+    rawData: number
     email: number
+    name: number
     subject: number
     body: number
     status: number
+    createdAt: number
     _all: number
   }
 
@@ -4645,40 +4649,37 @@ export namespace Prisma {
   export type ContactMinAggregateInputType = {
     id?: true
     userId?: true
-    name?: true
-    structure?: true
-    location?: true
-    research?: true
+    rawData?: true
     email?: true
+    name?: true
     subject?: true
     body?: true
     status?: true
+    createdAt?: true
   }
 
   export type ContactMaxAggregateInputType = {
     id?: true
     userId?: true
-    name?: true
-    structure?: true
-    location?: true
-    research?: true
+    rawData?: true
     email?: true
+    name?: true
     subject?: true
     body?: true
     status?: true
+    createdAt?: true
   }
 
   export type ContactCountAggregateInputType = {
     id?: true
     userId?: true
-    name?: true
-    structure?: true
-    location?: true
-    research?: true
+    rawData?: true
     email?: true
+    name?: true
     subject?: true
     body?: true
     status?: true
+    createdAt?: true
     _all?: true
   }
 
@@ -4771,14 +4772,13 @@ export namespace Prisma {
   export type ContactGroupByOutputType = {
     id: number
     userId: string | null
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData: string
     email: string
+    name: string
     subject: string
     body: string
     status: string
+    createdAt: Date
     _count: ContactCountAggregateOutputType | null
     _avg: ContactAvgAggregateOutputType | null
     _sum: ContactSumAggregateOutputType | null
@@ -4803,59 +4803,55 @@ export namespace Prisma {
   export type ContactSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    name?: boolean
-    structure?: boolean
-    location?: boolean
-    research?: boolean
+    rawData?: boolean
     email?: boolean
+    name?: boolean
     subject?: boolean
     body?: boolean
     status?: boolean
+    createdAt?: boolean
     user?: boolean | Contact$userArgs<ExtArgs>
   }, ExtArgs["result"]["contact"]>
 
   export type ContactSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    name?: boolean
-    structure?: boolean
-    location?: boolean
-    research?: boolean
+    rawData?: boolean
     email?: boolean
+    name?: boolean
     subject?: boolean
     body?: boolean
     status?: boolean
+    createdAt?: boolean
     user?: boolean | Contact$userArgs<ExtArgs>
   }, ExtArgs["result"]["contact"]>
 
   export type ContactSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     userId?: boolean
-    name?: boolean
-    structure?: boolean
-    location?: boolean
-    research?: boolean
+    rawData?: boolean
     email?: boolean
+    name?: boolean
     subject?: boolean
     body?: boolean
     status?: boolean
+    createdAt?: boolean
     user?: boolean | Contact$userArgs<ExtArgs>
   }, ExtArgs["result"]["contact"]>
 
   export type ContactSelectScalar = {
     id?: boolean
     userId?: boolean
-    name?: boolean
-    structure?: boolean
-    location?: boolean
-    research?: boolean
+    rawData?: boolean
     email?: boolean
+    name?: boolean
     subject?: boolean
     body?: boolean
     status?: boolean
+    createdAt?: boolean
   }
 
-  export type ContactOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "name" | "structure" | "location" | "research" | "email" | "subject" | "body" | "status", ExtArgs["result"]["contact"]>
+  export type ContactOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "rawData" | "email" | "name" | "subject" | "body" | "status" | "createdAt", ExtArgs["result"]["contact"]>
   export type ContactInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Contact$userArgs<ExtArgs>
   }
@@ -4874,14 +4870,13 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       userId: string | null
-      name: string
-      structure: string
-      location: string
-      research: string
+      rawData: string
       email: string
+      name: string
       subject: string
       body: string
       status: string
+      createdAt: Date
     }, ExtArgs["result"]["contact"]>
     composites: {}
   }
@@ -5308,14 +5303,13 @@ export namespace Prisma {
   interface ContactFieldRefs {
     readonly id: FieldRef<"Contact", 'Int'>
     readonly userId: FieldRef<"Contact", 'String'>
-    readonly name: FieldRef<"Contact", 'String'>
-    readonly structure: FieldRef<"Contact", 'String'>
-    readonly location: FieldRef<"Contact", 'String'>
-    readonly research: FieldRef<"Contact", 'String'>
+    readonly rawData: FieldRef<"Contact", 'String'>
     readonly email: FieldRef<"Contact", 'String'>
+    readonly name: FieldRef<"Contact", 'String'>
     readonly subject: FieldRef<"Contact", 'String'>
     readonly body: FieldRef<"Contact", 'String'>
     readonly status: FieldRef<"Contact", 'String'>
+    readonly createdAt: FieldRef<"Contact", 'DateTime'>
   }
     
 
@@ -5550,7 +5544,6 @@ export namespace Prisma {
      * The data used to create many Contacts.
      */
     data: ContactCreateManyInput | ContactCreateManyInput[]
-    skipDuplicates?: boolean
   }
 
   /**
@@ -5569,7 +5562,6 @@ export namespace Prisma {
      * The data used to create many Contacts.
      */
     data: ContactCreateManyInput | ContactCreateManyInput[]
-    skipDuplicates?: boolean
     /**
      * Choose, which related nodes to fetch as well
      */
@@ -5759,9 +5751,6 @@ export namespace Prisma {
    */
 
   export const TransactionIsolationLevel: {
-    ReadUncommitted: 'ReadUncommitted',
-    ReadCommitted: 'ReadCommitted',
-    RepeatableRead: 'RepeatableRead',
     Serializable: 'Serializable'
   };
 
@@ -5771,6 +5760,7 @@ export namespace Prisma {
   export const UserScalarFieldEnum: {
     id: 'id',
     googleId: 'googleId',
+    microsoftId: 'microsoftId',
     zimbraUsername: 'zimbraUsername',
     email: 'email',
     name: 'name',
@@ -5811,14 +5801,13 @@ export namespace Prisma {
   export const ContactScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
-    name: 'name',
-    structure: 'structure',
-    location: 'location',
-    research: 'research',
+    rawData: 'rawData',
     email: 'email',
+    name: 'name',
     subject: 'subject',
     body: 'body',
-    status: 'status'
+    status: 'status',
+    createdAt: 'createdAt'
   };
 
   export type ContactScalarFieldEnum = (typeof ContactScalarFieldEnum)[keyof typeof ContactScalarFieldEnum]
@@ -5830,14 +5819,6 @@ export namespace Prisma {
   };
 
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
-
-
-  export const QueryMode: {
-    default: 'default',
-    insensitive: 'insensitive'
-  };
-
-  export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
   export const NullsOrder: {
@@ -5861,23 +5842,9 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'String[]'
-   */
-  export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'String[]'>
-    
-
-
-  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
-
-  /**
-   * Reference to a field of type 'DateTime[]'
-   */
-  export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
     
 
 
@@ -5889,23 +5856,9 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Int[]'
-   */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float[]'
-   */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -5918,6 +5871,7 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: StringFilter<"User"> | string
     googleId?: StringNullableFilter<"User"> | string | null
+    microsoftId?: StringNullableFilter<"User"> | string | null
     zimbraUsername?: StringNullableFilter<"User"> | string | null
     email?: StringNullableFilter<"User"> | string | null
     name?: StringNullableFilter<"User"> | string | null
@@ -5936,6 +5890,7 @@ export namespace Prisma {
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     googleId?: SortOrderInput | SortOrder
+    microsoftId?: SortOrderInput | SortOrder
     zimbraUsername?: SortOrderInput | SortOrder
     email?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
@@ -5954,6 +5909,7 @@ export namespace Prisma {
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     googleId?: string
+    microsoftId?: string
     zimbraUsername?: string
     email?: string
     AND?: UserWhereInput | UserWhereInput[]
@@ -5970,11 +5926,12 @@ export namespace Prisma {
     sessions?: SessionListRelationFilter
     contacts?: ContactListRelationFilter
     documents?: DocumentListRelationFilter
-  }, "id" | "googleId" | "zimbraUsername" | "email">
+  }, "id" | "googleId" | "microsoftId" | "zimbraUsername" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     googleId?: SortOrderInput | SortOrder
+    microsoftId?: SortOrderInput | SortOrder
     zimbraUsername?: SortOrderInput | SortOrder
     email?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
@@ -5996,6 +5953,7 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"User"> | string
     googleId?: StringNullableWithAggregatesFilter<"User"> | string | null
+    microsoftId?: StringNullableWithAggregatesFilter<"User"> | string | null
     zimbraUsername?: StringNullableWithAggregatesFilter<"User"> | string | null
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
@@ -6126,28 +6084,26 @@ export namespace Prisma {
     NOT?: ContactWhereInput | ContactWhereInput[]
     id?: IntFilter<"Contact"> | number
     userId?: StringNullableFilter<"Contact"> | string | null
-    name?: StringFilter<"Contact"> | string
-    structure?: StringFilter<"Contact"> | string
-    location?: StringFilter<"Contact"> | string
-    research?: StringFilter<"Contact"> | string
+    rawData?: StringFilter<"Contact"> | string
     email?: StringFilter<"Contact"> | string
+    name?: StringFilter<"Contact"> | string
     subject?: StringFilter<"Contact"> | string
     body?: StringFilter<"Contact"> | string
     status?: StringFilter<"Contact"> | string
+    createdAt?: DateTimeFilter<"Contact"> | Date | string
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
   }
 
   export type ContactOrderByWithRelationInput = {
     id?: SortOrder
     userId?: SortOrderInput | SortOrder
-    name?: SortOrder
-    structure?: SortOrder
-    location?: SortOrder
-    research?: SortOrder
+    rawData?: SortOrder
     email?: SortOrder
+    name?: SortOrder
     subject?: SortOrder
     body?: SortOrder
     status?: SortOrder
+    createdAt?: SortOrder
     user?: UserOrderByWithRelationInput
   }
 
@@ -6157,28 +6113,26 @@ export namespace Prisma {
     OR?: ContactWhereInput[]
     NOT?: ContactWhereInput | ContactWhereInput[]
     userId?: StringNullableFilter<"Contact"> | string | null
-    name?: StringFilter<"Contact"> | string
-    structure?: StringFilter<"Contact"> | string
-    location?: StringFilter<"Contact"> | string
-    research?: StringFilter<"Contact"> | string
+    rawData?: StringFilter<"Contact"> | string
     email?: StringFilter<"Contact"> | string
+    name?: StringFilter<"Contact"> | string
     subject?: StringFilter<"Contact"> | string
     body?: StringFilter<"Contact"> | string
     status?: StringFilter<"Contact"> | string
+    createdAt?: DateTimeFilter<"Contact"> | Date | string
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
   }, "id">
 
   export type ContactOrderByWithAggregationInput = {
     id?: SortOrder
     userId?: SortOrderInput | SortOrder
-    name?: SortOrder
-    structure?: SortOrder
-    location?: SortOrder
-    research?: SortOrder
+    rawData?: SortOrder
     email?: SortOrder
+    name?: SortOrder
     subject?: SortOrder
     body?: SortOrder
     status?: SortOrder
+    createdAt?: SortOrder
     _count?: ContactCountOrderByAggregateInput
     _avg?: ContactAvgOrderByAggregateInput
     _max?: ContactMaxOrderByAggregateInput
@@ -6192,19 +6146,19 @@ export namespace Prisma {
     NOT?: ContactScalarWhereWithAggregatesInput | ContactScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Contact"> | number
     userId?: StringNullableWithAggregatesFilter<"Contact"> | string | null
-    name?: StringWithAggregatesFilter<"Contact"> | string
-    structure?: StringWithAggregatesFilter<"Contact"> | string
-    location?: StringWithAggregatesFilter<"Contact"> | string
-    research?: StringWithAggregatesFilter<"Contact"> | string
+    rawData?: StringWithAggregatesFilter<"Contact"> | string
     email?: StringWithAggregatesFilter<"Contact"> | string
+    name?: StringWithAggregatesFilter<"Contact"> | string
     subject?: StringWithAggregatesFilter<"Contact"> | string
     body?: StringWithAggregatesFilter<"Contact"> | string
     status?: StringWithAggregatesFilter<"Contact"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"Contact"> | Date | string
   }
 
   export type UserCreateInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -6223,6 +6177,7 @@ export namespace Prisma {
   export type UserUncheckedCreateInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -6241,6 +6196,7 @@ export namespace Prisma {
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -6259,6 +6215,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -6277,6 +6234,7 @@ export namespace Prisma {
   export type UserCreateManyInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -6292,6 +6250,7 @@ export namespace Prisma {
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -6307,6 +6266,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -6427,96 +6387,89 @@ export namespace Prisma {
   }
 
   export type ContactCreateInput = {
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData?: string
     email: string
+    name?: string
     subject: string
     body: string
     status?: string
+    createdAt?: Date | string
     user?: UserCreateNestedOneWithoutContactsInput
   }
 
   export type ContactUncheckedCreateInput = {
     id?: number
     userId?: string | null
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData?: string
     email: string
+    name?: string
     subject: string
     body: string
     status?: string
+    createdAt?: Date | string
   }
 
   export type ContactUpdateInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneWithoutContactsNestedInput
   }
 
   export type ContactUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     userId?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ContactCreateManyInput = {
     id?: number
     userId?: string | null
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData?: string
     email: string
+    name?: string
     subject: string
     body: string
     status?: string
+    createdAt?: Date | string
   }
 
   export type ContactUpdateManyMutationInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ContactUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     userId?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    in?: string[]
+    notIn?: string[]
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -6524,14 +6477,13 @@ export namespace Prisma {
     contains?: string | StringFieldRefInput<$PrismaModel>
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
     not?: NestedStringFilter<$PrismaModel> | string
   }
 
   export type StringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    in?: string[] | null
+    notIn?: string[] | null
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -6539,14 +6491,13 @@ export namespace Prisma {
     contains?: string | StringFieldRefInput<$PrismaModel>
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
   export type DateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -6556,8 +6507,8 @@ export namespace Prisma {
 
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -6603,6 +6554,7 @@ export namespace Prisma {
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     googleId?: SortOrder
+    microsoftId?: SortOrder
     zimbraUsername?: SortOrder
     email?: SortOrder
     name?: SortOrder
@@ -6618,6 +6570,7 @@ export namespace Prisma {
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     googleId?: SortOrder
+    microsoftId?: SortOrder
     zimbraUsername?: SortOrder
     email?: SortOrder
     name?: SortOrder
@@ -6633,6 +6586,7 @@ export namespace Prisma {
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     googleId?: SortOrder
+    microsoftId?: SortOrder
     zimbraUsername?: SortOrder
     email?: SortOrder
     name?: SortOrder
@@ -6647,8 +6601,8 @@ export namespace Prisma {
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    in?: string[]
+    notIn?: string[]
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -6656,7 +6610,6 @@ export namespace Prisma {
     contains?: string | StringFieldRefInput<$PrismaModel>
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
     not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedStringFilter<$PrismaModel>
@@ -6665,8 +6618,8 @@ export namespace Prisma {
 
   export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    in?: string[] | null
+    notIn?: string[] | null
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -6674,7 +6627,6 @@ export namespace Prisma {
     contains?: string | StringFieldRefInput<$PrismaModel>
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
     not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedStringNullableFilter<$PrismaModel>
@@ -6683,8 +6635,8 @@ export namespace Prisma {
 
   export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -6697,8 +6649,8 @@ export namespace Prisma {
 
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -6734,8 +6686,8 @@ export namespace Prisma {
 
   export type IntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
     lt?: number | IntFieldRefInput<$PrismaModel>
     lte?: number | IntFieldRefInput<$PrismaModel>
     gt?: number | IntFieldRefInput<$PrismaModel>
@@ -6785,8 +6737,8 @@ export namespace Prisma {
 
   export type IntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
     lt?: number | IntFieldRefInput<$PrismaModel>
     lte?: number | IntFieldRefInput<$PrismaModel>
     gt?: number | IntFieldRefInput<$PrismaModel>
@@ -6807,14 +6759,13 @@ export namespace Prisma {
   export type ContactCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    name?: SortOrder
-    structure?: SortOrder
-    location?: SortOrder
-    research?: SortOrder
+    rawData?: SortOrder
     email?: SortOrder
+    name?: SortOrder
     subject?: SortOrder
     body?: SortOrder
     status?: SortOrder
+    createdAt?: SortOrder
   }
 
   export type ContactAvgOrderByAggregateInput = {
@@ -6824,27 +6775,25 @@ export namespace Prisma {
   export type ContactMaxOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    name?: SortOrder
-    structure?: SortOrder
-    location?: SortOrder
-    research?: SortOrder
+    rawData?: SortOrder
     email?: SortOrder
+    name?: SortOrder
     subject?: SortOrder
     body?: SortOrder
     status?: SortOrder
+    createdAt?: SortOrder
   }
 
   export type ContactMinOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
-    name?: SortOrder
-    structure?: SortOrder
-    location?: SortOrder
-    research?: SortOrder
+    rawData?: SortOrder
     email?: SortOrder
+    name?: SortOrder
     subject?: SortOrder
     body?: SortOrder
     status?: SortOrder
+    createdAt?: SortOrder
   }
 
   export type ContactSumOrderByAggregateInput = {
@@ -7047,8 +6996,8 @@ export namespace Prisma {
 
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    in?: string[]
+    notIn?: string[]
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -7061,8 +7010,8 @@ export namespace Prisma {
 
   export type NestedStringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    in?: string[] | null
+    notIn?: string[] | null
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -7075,8 +7024,8 @@ export namespace Prisma {
 
   export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -7086,8 +7035,8 @@ export namespace Prisma {
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -7097,8 +7046,8 @@ export namespace Prisma {
 
   export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    in?: string[]
+    notIn?: string[]
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -7114,8 +7063,8 @@ export namespace Prisma {
 
   export type NestedIntFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
     lt?: number | IntFieldRefInput<$PrismaModel>
     lte?: number | IntFieldRefInput<$PrismaModel>
     gt?: number | IntFieldRefInput<$PrismaModel>
@@ -7125,8 +7074,8 @@ export namespace Prisma {
 
   export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    in?: string[] | null
+    notIn?: string[] | null
     lt?: string | StringFieldRefInput<$PrismaModel>
     lte?: string | StringFieldRefInput<$PrismaModel>
     gt?: string | StringFieldRefInput<$PrismaModel>
@@ -7142,8 +7091,8 @@ export namespace Prisma {
 
   export type NestedIntNullableFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    in?: number[] | null
+    notIn?: number[] | null
     lt?: number | IntFieldRefInput<$PrismaModel>
     lte?: number | IntFieldRefInput<$PrismaModel>
     gt?: number | IntFieldRefInput<$PrismaModel>
@@ -7153,8 +7102,8 @@ export namespace Prisma {
 
   export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -7167,8 +7116,8 @@ export namespace Prisma {
 
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[]
+    notIn?: Date[] | string[]
     lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
@@ -7181,8 +7130,8 @@ export namespace Prisma {
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
     lt?: number | IntFieldRefInput<$PrismaModel>
     lte?: number | IntFieldRefInput<$PrismaModel>
     gt?: number | IntFieldRefInput<$PrismaModel>
@@ -7197,8 +7146,8 @@ export namespace Prisma {
 
   export type NestedFloatFilter<$PrismaModel = never> = {
     equals?: number | FloatFieldRefInput<$PrismaModel>
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
     lt?: number | FloatFieldRefInput<$PrismaModel>
     lte?: number | FloatFieldRefInput<$PrismaModel>
     gt?: number | FloatFieldRefInput<$PrismaModel>
@@ -7223,30 +7172,27 @@ export namespace Prisma {
 
   export type SessionCreateManyUserInputEnvelope = {
     data: SessionCreateManyUserInput | SessionCreateManyUserInput[]
-    skipDuplicates?: boolean
   }
 
   export type ContactCreateWithoutUserInput = {
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData?: string
     email: string
+    name?: string
     subject: string
     body: string
     status?: string
+    createdAt?: Date | string
   }
 
   export type ContactUncheckedCreateWithoutUserInput = {
     id?: number
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData?: string
     email: string
+    name?: string
     subject: string
     body: string
     status?: string
+    createdAt?: Date | string
   }
 
   export type ContactCreateOrConnectWithoutUserInput = {
@@ -7256,7 +7202,6 @@ export namespace Prisma {
 
   export type ContactCreateManyUserInputEnvelope = {
     data: ContactCreateManyUserInput | ContactCreateManyUserInput[]
-    skipDuplicates?: boolean
   }
 
   export type DocumentCreateWithoutUserInput = {
@@ -7283,7 +7228,6 @@ export namespace Prisma {
 
   export type DocumentCreateManyUserInputEnvelope = {
     data: DocumentCreateManyUserInput | DocumentCreateManyUserInput[]
-    skipDuplicates?: boolean
   }
 
   export type SessionUpsertWithWhereUniqueWithoutUserInput = {
@@ -7333,14 +7277,13 @@ export namespace Prisma {
     NOT?: ContactScalarWhereInput | ContactScalarWhereInput[]
     id?: IntFilter<"Contact"> | number
     userId?: StringNullableFilter<"Contact"> | string | null
-    name?: StringFilter<"Contact"> | string
-    structure?: StringFilter<"Contact"> | string
-    location?: StringFilter<"Contact"> | string
-    research?: StringFilter<"Contact"> | string
+    rawData?: StringFilter<"Contact"> | string
     email?: StringFilter<"Contact"> | string
+    name?: StringFilter<"Contact"> | string
     subject?: StringFilter<"Contact"> | string
     body?: StringFilter<"Contact"> | string
     status?: StringFilter<"Contact"> | string
+    createdAt?: DateTimeFilter<"Contact"> | Date | string
   }
 
   export type DocumentUpsertWithWhereUniqueWithoutUserInput = {
@@ -7375,6 +7318,7 @@ export namespace Prisma {
   export type UserCreateWithoutSessionsInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -7392,6 +7336,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutSessionsInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -7425,6 +7370,7 @@ export namespace Prisma {
   export type UserUpdateWithoutSessionsInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -7442,6 +7388,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutSessionsInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -7459,6 +7406,7 @@ export namespace Prisma {
   export type UserCreateWithoutDocumentsInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -7476,6 +7424,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutDocumentsInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -7509,6 +7458,7 @@ export namespace Prisma {
   export type UserUpdateWithoutDocumentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -7526,6 +7476,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutDocumentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -7543,6 +7494,7 @@ export namespace Prisma {
   export type UserCreateWithoutContactsInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -7560,6 +7512,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutContactsInput = {
     id?: string
     googleId?: string | null
+    microsoftId?: string | null
     zimbraUsername?: string | null
     email?: string | null
     name?: string | null
@@ -7593,6 +7546,7 @@ export namespace Prisma {
   export type UserUpdateWithoutContactsInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -7610,6 +7564,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutContactsInput = {
     id?: StringFieldUpdateOperationsInput | string
     googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    microsoftId?: NullableStringFieldUpdateOperationsInput | string | null
     zimbraUsername?: NullableStringFieldUpdateOperationsInput | string | null
     email?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
@@ -7631,14 +7586,13 @@ export namespace Prisma {
 
   export type ContactCreateManyUserInput = {
     id?: number
-    name: string
-    structure: string
-    location: string
-    research: string
+    rawData?: string
     email: string
+    name?: string
     subject: string
     body: string
     status?: string
+    createdAt?: Date | string
   }
 
   export type DocumentCreateManyUserInput = {
@@ -7666,38 +7620,35 @@ export namespace Prisma {
   }
 
   export type ContactUpdateWithoutUserInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ContactUncheckedUpdateWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ContactUncheckedUpdateManyWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-    structure?: StringFieldUpdateOperationsInput | string
-    location?: StringFieldUpdateOperationsInput | string
-    research?: StringFieldUpdateOperationsInput | string
+    rawData?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
     subject?: StringFieldUpdateOperationsInput | string
     body?: StringFieldUpdateOperationsInput | string
     status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type DocumentUpdateWithoutUserInput = {

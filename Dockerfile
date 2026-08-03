@@ -11,10 +11,13 @@
 # =============================================================================
 
 # ─── ÉTAPE 1 : Builder (node_modules complets) ────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
+
+# Outils de build pour compiler les modules natifs (better-sqlite3)
+RUN apk add --no-cache python3 make g++
 
 # ARG pour prisma generate — DATABASE_URL est requis par prisma.config.ts
-ARG DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy
+ARG DATABASE_URL=file:/app/prisma/dev.db
 ENV DATABASE_URL=$DATABASE_URL
 
 WORKDIR /app
@@ -23,10 +26,7 @@ WORKDIR /app
 #    Layer 1 : si package.json ne change pas → cache hit, pas de réinstall
 COPY package*.json ./
 
-# ── 2. Installer les dépendances ────────────────────────────────────────
-#    --legacy-peer-deps nécessaire pour @lucia-auth/adapter-prisma qui n'est
-#    pas compatible avec @prisma/client@7.x (conflit de peer dependencies)
-#    --ignore-scripts évite prisma generate (fait explicitement ensuite)
+# ── 2. Installer les dépendances (sans scripts pour éviter prisma generate prématuré) ──
 RUN npm ci --legacy-peer-deps --ignore-scripts
 
 # ── 3. Copier Prisma (schéma + config) — layer séparé du npm install ───
@@ -35,13 +35,15 @@ COPY prisma/schema.prisma ./prisma/schema.prisma
 COPY prisma.config.ts ./
 
 # ── 4. Générer le client Prisma ─────────────────────────────────────────
-#    Layer 3 : ne coûte que le temps de prisma generate (rapide)
 RUN npx prisma generate
+
+# ── 5. Compiler le module natif better-sqlite3 ──────────────────────────
+RUN npm rebuild better-sqlite3
 
 
 # =============================================================================
 # ─── ÉTAPE 2 : Production (image finale, légère et sécurisée) ───────────────
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 # Certificats pour wget (healthcheck) + tzdata pour les fuseaux horaires
 RUN apk add --no-cache wget ca-certificates tzdata
@@ -57,14 +59,23 @@ WORKDIR /app
 #    taille, mais garantit le fonctionnement.
 COPY --from=builder /app/node_modules ./node_modules
 
-# ── 2. Client Prisma généré + binaires Prisma ───────────────────────────────
-COPY --from=builder /app/src/generated ./src/generated
-COPY --from=builder /app/prisma ./prisma
-
-# ── 3. Code source de l'application (uniquement ce qui est nécessaire) ──────
+# ── 2. Code source de l'application (uniquement ce qui est nécessaire) ──────
 COPY public ./public
 COPY src ./src
 COPY server.js ./
+
+# ── 3. Client Prisma généré + binaires Prisma ───────────────────────────────
+#    IMPORTANT : copié APRÈS le code source pour écraser tout vieux client
+#    qui pourrait traîner dans src/generated/ (le .dockerignore l'exclut
+#    mais ceci est une sécurité défensive supplémentaire)
+COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/prisma ./prisma
+#    migrations Prisma (pour prisma migrate deploy au démarrage)
+#    ⚠️  On les copie dans /app/prisma/ pour le runtime MAIS AUSSI dans
+#    /app/prisma-migrations-backup/ car le volume sqlite_data écrase /app/prisma/
+#    au montage (docker-compose). L'entrypoint les restaurera au démarrage.
+COPY prisma/migrations ./prisma/migrations
+COPY prisma/migrations ./prisma-migrations-backup/migrations
 #    prisma.config.ts est nécessaire pour les migrations Prisma v7 au runtime
 COPY --from=builder /app/prisma.config.ts ./
 

@@ -17,11 +17,14 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - OUTLOOK_CLIENT_ID=${OUTLOOK_CLIENT_ID}
+      - OUTLOOK_CLIENT_SECRET=${OUTLOOK_CLIENT_SECRET}
+      - OUTLOOK_REDIRECT_URI=${OUTLOOK_REDIRECT_URI}
       - PORT=3001
       # ── Base de données SQLite ───────────────────────────────────────────
       #    Le chemin doit correspondre au point de montage du volume sqlite_data
       #    (monté sur /app/prisma/). Le fichier sera persistant entre les redémarrages.
-      - DATABASE_URL=${DATABASE_URL:-file:./prisma/dev.db}
+      - DATABASE_URL=file:/app/prisma/dev.db
     volumes:
       # Monte le PDF depuis la machine locale (ne pas l'inclure dans l'image)
       - ./CV_LETTRE_DE_RECOMMANDATION.pdf:/app/CV_LETTRE_DE_RECOMMANDATION.pdf:ro

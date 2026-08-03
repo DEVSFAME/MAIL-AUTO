@@ -49,7 +49,12 @@ Desktop.ini
 # ─── Prisma / SQLite ─────────────────────────────────────────────────────────
 # Base de données SQLite (générée par Prisma)
 *.db
-prisma/migrations/  # Les migrations sont déjà dans l'image via COPY
+
+# ─── Prisma Client Généré ───────────────────────────────────────────────────
+# Le client Prisma est généré FRESH dans le builder (step 1 du Dockerfile),
+# puis copié dans l'image de production via COPY --from=builder.
+# On exclut la version locale pour éviter qu'elle écrase la version builder.
+src/generated/
 
 # ─── Fichiers temporaires ─────────────────────────────────────────────────────
 tmp/

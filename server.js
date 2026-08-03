@@ -38,13 +38,8 @@ const XLSX       = require('xlsx');
 const path       = require('path');
 const fs         = require('fs');
 
-// ─── Prisma (PostgreSQL Neon) ──────────────────────────────────────────────────
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { PrismaClient } = require('./src/generated/prisma');
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+// ─── Prisma (instance unique partagée — cf. src/db.js) ────────────────────────
+const prisma = require('./src/db');
 
 // ─── Client Zimbra SOAP (bypass restriction SMTP universitaire) ───────────────
 const zimbraClient = (() => {
@@ -58,6 +53,9 @@ const { lucia, createUserFromZimbra, requireAuth } = require('./src/auth');
 
 // ─── Client Gmail API (envoi via token OAuth Google) ──────────────────────────
 const gmailClient = require('./src/gmail-client');
+
+// ─── Client Microsoft Graph (envoi via token OAuth Outlook) ────────────────────
+const outlookClient = require('./src/outlook-client');
 
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -79,17 +77,16 @@ function logError(context, error, extra = {}) {
 ${stack}`);
 }
 
-// ─── CORS — Autorise les requêtes depuis Hostinger, ngrok et localhost ────────
+// ─── CORS — Autorise les requêtes depuis localhost (Docker/dev) ───────────────
 app.use(cors({
   origin: [
-    'https://masdelsol-test.online',
-    'https://www.masdelsol-test.online',
-    'https://cytotropic-bipedally-ollie.ngrok-free.dev',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
 
@@ -114,34 +111,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─── Générateur de mail personnalisé ─────────────────────────────────────────
-function generateEmail(contact) {
-  const { name, structure, location, research } = contact;
+// ─── Helper : détection automatique de la colonne email ──────────────────────
+function detectEmailColumn(headers, rows) {
+  // Étape 1 : chercher exactement "adresse mail" (ignore case + trim)
+  const headerIndex = headers.findIndex(h =>
+    h.trim().toLowerCase() === 'adresse mail'
+  );
+  if (headerIndex !== -1) {
+    return { index: headerIndex, method: 'header', label: headers[headerIndex] };
+  }
 
-  const subject = `Candidature Spontanée – M2 Imagerie Biomédicale Multimodale`;
+  // Étape 2 : fallback par contenu — première colonne contenant "@"
+  const sampleRows = rows.slice(0, Math.min(rows.length, 20));
+  for (let col = 0; col < headers.length; col++) {
+    const hasEmail = sampleRows.some(row => {
+      const val = String(row[col] || '').trim();
+      return val.includes('@');
+    });
+    if (hasEmail) {
+      return { index: col, method: 'content', label: headers[col] };
+    }
+  }
 
-  const body =
-`Madame, Monsieur ${name},
-
-Je me permets de vous adresser ma candidature spontanée au sein de ${structure}, en lien avec vos travaux de recherche en ${research}.
-
-Actuellement étudiante en deuxième année de Master en Imagerie Biomédicale Multimodale à l'Université de Tours, je suis particulièrement intéressé par le domaine de « ${research} » développé au sein de votre équipe à ${location}.
-
-Mon parcours m'a permis d'acquérir des compétences solides en imagerie médicale, traitement d'images et analyse de données biomédicales. Je suis convaincu que rejoindre votre laboratoire me permettrait d'approfondir ces compétences tout en contribuant activement à vos projets de recherche.
-
-Vous trouverez en pièce jointe mon CV ainsi que ma lettre de recommandation afin de vous permettre d'évaluer mon profil.
-
-Je reste disponible pour tout entretien ou complément d'information et vous remercie de l'attention que vous porterez à ma candidature.
-
-Dans l'attente de vous lire,
-
-Cordialement,
-
-MOHAMMAD ANIKA
-M2 Imagerie Biomédicale Multimodale
-${process.env.SMTP_USER}`;
-
-  return { subject, body };
+  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -200,34 +192,117 @@ app.post('/api/auth/zimbra', async (req, res) => {
   }
 });
 
+// ─── Helper : construire le redirect_uri à partir de la requête ──────────────
+const SERVER_PORT = process.env.PORT || 3000;
+
+function buildRedirectUri(req) {
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || `localhost:${SERVER_PORT}`;
+  return `${protocol}://${host}/api/auth/google/callback`;
+}
+
+function buildOutlookRedirectUri(req) {
+  // En Docker, le port exposé est 3001, donc on utilise le OUTLOOK_REDIRECT_URI du .env
+  // qui pointe déjà vers localhost:3001
+  return process.env.OUTLOOK_REDIRECT_URI || 'http://localhost:3001/api/auth/outlook/callback';
+}
+
 // ─── GET /api/auth/google — Redirection Google OAuth (Arctic v3+ PKCE) ────────
 app.get('/api/auth/google', (req, res) => {
   try {
-    const { googleAuth } = require('./src/auth');
+    const { getGoogleAuth } = require('./src/auth');
     const crypto = require('crypto');
     const { generateCodeVerifier } = require('arctic');
+
+    // Déterminer le redirect_uri dynamiquement selon l'environnement
+    const redirectUri = buildRedirectUri(req);
+    console.log(`🔗 OAuth redirect_uri détecté : ${redirectUri}`);
+
+    const auth = getGoogleAuth(redirectUri);
     const state = crypto.randomBytes(32).toString('hex');
     const codeVerifier = generateCodeVerifier();
-    const url = googleAuth.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/gmail.send']);
+    const url = auth.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email', 'https://www.googleapis.com/auth/gmail.send']);
     url.searchParams.set('prompt', 'consent');
     url.searchParams.set('access_type', 'offline');
-    // Stocker le state et le codeVerifier dans des cookies pour vérification au callback
+
+    // Déterminer si on est en HTTPS
+    const isSecure = redirectUri.startsWith('https');
+
+    // Stocker le state, le codeVerifier ET le redirectUri dans des cookies pour le callback
     res.cookie('oauth_state', state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       maxAge: 60 * 10 * 1000, // 10 min
       sameSite: 'lax',
     });
     res.cookie('oauth_code_verifier', codeVerifier, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecure,
       maxAge: 60 * 10 * 1000, // 10 min
+      sameSite: 'lax',
+    });
+    res.cookie('oauth_redirect_uri', redirectUri, {
+      httpOnly: true,
+      secure: isSecure,
+      maxAge: 60 * 10 * 1000,
       sameSite: 'lax',
     });
     res.redirect(url.toString());
   } catch (err) {
     logError('AuthGoogle', err);
     res.status(500).json({ success: false, error: 'Erreur lors de la redirection Google.' });
+  }
+});
+
+// ─── GET /api/auth/outlook — Redirection Microsoft Entra ID OAuth (Arctic v3+ PKCE) ─
+app.get('/api/auth/outlook', (req, res) => {
+  try {
+    const { getOutlookAuth } = require('./src/auth');
+    const crypto = require('crypto');
+    const { generateCodeVerifier } = require('arctic');
+
+    // Utiliser le redirect_uri du .env (pointant vers localhost:3001 en Docker)
+    const redirectUri = buildOutlookRedirectUri(req);
+    console.log(`🔗 Outlook OAuth redirect_uri : ${redirectUri}`);
+
+    const auth = getOutlookAuth(redirectUri);
+    const state = crypto.randomBytes(32).toString('hex');
+    const codeVerifier = generateCodeVerifier();
+    const url = auth.createAuthorizationURL(state, codeVerifier, [
+      'openid',
+      'profile',
+      'email',
+      'offline_access',
+      'https://graph.microsoft.com/Mail.Send',
+    ]);
+
+    // Déterminer si on est en HTTPS
+    const isSecure = redirectUri.startsWith('https');
+
+    // Stocker le state, le codeVerifier et le redirectUri dans des cookies pour le callback
+    // Utiliser des noms de cookies distincts pour éviter les collisions avec Google
+    res.cookie('outlook_oauth_state', state, {
+      httpOnly: true,
+      secure: isSecure,
+      maxAge: 60 * 10 * 1000, // 10 min
+      sameSite: 'lax',
+    });
+    res.cookie('outlook_oauth_code_verifier', codeVerifier, {
+      httpOnly: true,
+      secure: isSecure,
+      maxAge: 60 * 10 * 1000, // 10 min
+      sameSite: 'lax',
+    });
+    res.cookie('outlook_oauth_redirect_uri', redirectUri, {
+      httpOnly: true,
+      secure: isSecure,
+      maxAge: 60 * 10 * 1000,
+      sameSite: 'lax',
+    });
+    res.redirect(url.toString());
+  } catch (err) {
+    logError('AuthOutlook', err);
+    res.status(500).json({ success: false, error: 'Erreur lors de la redirection Outlook.' });
   }
 });
 
@@ -241,27 +316,82 @@ function getCookie(name) {
 // ─── GET /api/auth/google/callback — Callback Google OAuth ────────────────────
 app.get('/api/auth/google/callback', async (req, res) => {
   try {
-    const { googleAuth, createUserFromGoogle } = require('./src/auth');
+    const { getGoogleAuth, createUserFromGoogle } = require('./src/auth');
+
+    // ── 1. Détecter si Google a renvoyé une erreur ──────────────────────────
+    if (req.query.error) {
+      const googleError = req.query.error;
+      const errorDesc = req.query.error_description || '';
+      console.error(`❌ Google OAuth error: ${googleError} — ${errorDesc}`);
+
+      // Message utilisateur explicite selon l'erreur
+      if (googleError === 'access_denied') {
+        return res.status(403).json({
+          success: false,
+          error: 'Accès refusé par Google. Vérifiez que votre adresse email est bien ajoutée comme "Utilisateur test" dans la console Google Cloud (APIs & Services > OAuth consent screen > Test users).',
+          details: errorDesc,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: `Erreur OAuth Google : ${googleError}`,
+        details: errorDesc,
+      });
+    }
+
+    // ── 2. Récupérer les paramètres ─────────────────────────────────────────
     const code = req.query.code;
     const state = req.query.state;
     const cookieHeader = req.headers.cookie || '';
     const storedState = getCookie('oauth_state', cookieHeader);
     const codeVerifier = getCookie('oauth_code_verifier', cookieHeader);
+    const redirectUri = getCookie('oauth_redirect_uri', cookieHeader) || process.env.GOOGLE_REDIRECT_URI;
+
+    // Debug : logger ce qu'on reçoit vs ce qu'on attend
+    console.log(`🔐 OAuth callback — redirect_uri: ${redirectUri}, state reçu: ${state}, state stocké: ${storedState}, codeVerifier présent: ${!!codeVerifier}`);
 
     if (!code || !state || state !== storedState || !codeVerifier) {
-      return res.status(400).json({ success: false, error: 'OAuth invalide.' });
+      const reason = !code ? 'code manquant'
+        : !state ? 'state manquant'
+        : state !== storedState ? `state mismatch (reçu="${state}", stocké="${storedState}")`
+        : 'codeVerifier manquant (cookie non transmis ?)';
+
+      console.error(`❌ OAuth validation échouée : ${reason}`);
+      return res.status(400).json({
+        success: false,
+        error: `Validation OAuth échouée : ${reason}. Vérifiez que les cookies sont bien transmis (même domaine, même scheme HTTP/HTTPS).`,
+      });
     }
 
-    const tokens = await googleAuth.validateAuthorizationCode(code, codeVerifier);
+    // ── 3. Échanger le code contre des tokens ───────────────────────────────
+    // Utiliser le MÊME redirect_uri que celui envoyé à Google
+    const auth = getGoogleAuth(redirectUri);
+    const tokens = await auth.validateAuthorizationCode(code, codeVerifier);
+    console.log('✅ Authorization code validé avec succès');
+
+    // ── 4. Récupérer les infos utilisateur Google ───────────────────────────
     const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokens.accessToken()}` },
     });
+
+    if (!googleResponse.ok) {
+      const errText = await googleResponse.text();
+      throw new Error(`Échec userinfo Google (${googleResponse.status}): ${errText}`);
+    }
+
     const googleUser = await googleResponse.json();
+    console.log(`👤 Google user: ${googleUser.email} (${googleUser.sub})`);
 
     // refreshToken peut être absent (Google ne le renvoie qu'au premier échange)
     let refreshToken = null;
-    try { refreshToken = tokens.refreshToken(); } catch (_) {}
+    try {
+      refreshToken = tokens.refreshToken();
+      console.log('🔑 Refresh token obtenu (première connexion ou prompt=consent)');
+    } catch (_) {
+      console.log('ℹ️  Pas de refresh token dans cette réponse (normal si déjà autorisé)');
+    }
 
+    // ── 5. Créer/mettre à jour l'utilisateur en base ────────────────────────
     const user = await createUserFromGoogle(
       googleUser,
       tokens.accessToken(),
@@ -269,15 +399,150 @@ app.get('/api/auth/google/callback', async (req, res) => {
       new Date(Date.now() + (tokens.expiresIn || 3600) * 1000)
     );
 
+    // ── 6. Créer une session Lucia ──────────────────────────────────────────
     const session = await lucia.createSession(user.id, {});
     const sessionCookie = lucia.createSessionCookie(session.id);
 
     res.appendHeader('Set-Cookie', sessionCookie.serialize());
     // Rediriger vers le frontend
+    console.log(`✅ Connexion Google réussie : ${googleUser.email}`);
     res.redirect('/');
   } catch (err) {
-    logError('AuthGoogleCallback', err);
-    res.status(500).json({ success: false, error: 'Erreur lors de l\'authentification Google.' });
+    logError('AuthGoogleCallback', err, {
+      query: JSON.stringify(req.query),
+      cookies: (req.headers.cookie || '').substring(0, 300),
+      stack: err.stack?.substring(0, 500),
+    });
+    // Toujours afficher l'erreur réelle dans les logs serveur (diagnostic)
+    console.error(`\n❌ ERREUR OAuth Google Callback : ${err.message}`);
+    if (err.cause) console.error(`   Cause : ${err.cause}`);
+    // Renvoyer le message réel en mode développement, générique en production stricte
+    const errorMessage = (process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV)
+      ? 'Erreur lors de l\'authentification Google.'
+      : `Erreur lors de l'authentification Google : ${err.message}`;
+    res.status(500).json({ success: false, error: errorMessage });
+  }
+});
+
+// ─── GET /api/auth/outlook/callback — Callback Microsoft Entra ID OAuth ────────
+app.get('/api/auth/outlook/callback', async (req, res) => {
+  try {
+    const { getOutlookAuth, createUserFromMicrosoft } = require('./src/auth');
+
+    // ── 1. Détecter si Microsoft a renvoyé une erreur ──────────────────────
+    if (req.query.error) {
+      const msError = req.query.error;
+      const errorDesc = req.query.error_description || '';
+      console.error(`❌ Outlook OAuth error: ${msError} — ${errorDesc}`);
+
+      if (msError === 'access_denied') {
+        return res.status(403).json({
+          success: false,
+          error: 'Accès refusé par Microsoft. Vérifiez que votre application est correctement enregistrée dans Azure AD.',
+          details: errorDesc,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: `Erreur OAuth Outlook : ${msError}`,
+        details: errorDesc,
+      });
+    }
+
+    // ── 2. Récupérer les paramètres ─────────────────────────────────────────
+    const code = req.query.code;
+    const state = req.query.state;
+    const cookieHeader = req.headers.cookie || '';
+    const storedState = getCookie('outlook_oauth_state', cookieHeader);
+    const codeVerifier = getCookie('outlook_oauth_code_verifier', cookieHeader);
+    const redirectUri = getCookie('outlook_oauth_redirect_uri', cookieHeader) || process.env.OUTLOOK_REDIRECT_URI;
+
+    console.log(`🔐 Outlook OAuth callback — redirect_uri: ${redirectUri}, state reçu: ${state}, state stocké: ${storedState}, codeVerifier présent: ${!!codeVerifier}`);
+
+    if (!code || !state || state !== storedState || !codeVerifier) {
+      const reason = !code ? 'code manquant'
+        : !state ? 'state manquant'
+        : state !== storedState ? `state mismatch (reçu="${state}", stocké="${storedState}")`
+        : 'codeVerifier manquant (cookie non transmis ?)';
+
+      console.error(`❌ Outlook OAuth validation échouée : ${reason}`);
+      return res.status(400).json({
+        success: false,
+        error: `Validation OAuth Outlook échouée : ${reason}. Vérifiez que les cookies sont bien transmis.`,
+      });
+    }
+
+    // ── 3. Échanger le code contre des tokens ───────────────────────────────
+    const auth = getOutlookAuth(redirectUri);
+    const tokens = await auth.validateAuthorizationCode(code, codeVerifier);
+    console.log('✅ Outlook authorization code validé avec succès');
+
+    // ── 4. Extraire les infos utilisateur depuis l'ID token (évite l'appel /me qui nécessite User.Read) ──
+    let microsoftUser;
+    try {
+      const idToken = tokens.idToken();
+      // Décoder le payload JWT (partie 2 du token séparé par des points)
+      const payloadBase64 = idToken.split('.')[1];
+      const payloadJson = Buffer.from(payloadBase64, 'base64url').toString('utf8');
+      const claims = JSON.parse(payloadJson);
+
+      microsoftUser = {
+        sub: claims.sub || claims.oid,
+        mail: claims.email || claims.preferred_username || claims.upn,
+        userPrincipalName: claims.upn || claims.preferred_username,
+        displayName: claims.name,
+      };
+      console.log(`👤 Microsoft user (via ID token): ${microsoftUser.mail || microsoftUser.userPrincipalName} (${microsoftUser.sub})`);
+    } catch (idTokenErr) {
+      // Fallback : tenter l'appel /me si l'ID token n'est pas disponible
+      console.log('ℹ️  ID token non disponible, fallback vers Microsoft Graph /me');
+      const msResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+        headers: { Authorization: `Bearer ${tokens.accessToken()}` },
+      });
+      if (!msResponse.ok) {
+        const errText = await msResponse.text();
+        throw new Error(`Échec Microsoft Graph /me (${msResponse.status}): ${errText}`);
+      }
+      microsoftUser = await msResponse.json();
+      console.log(`👤 Microsoft user (via Graph API): ${microsoftUser.mail || microsoftUser.userPrincipalName} (${microsoftUser.id})`);
+    }
+
+    // refreshToken peut être absent
+    let refreshToken = null;
+    try {
+      refreshToken = tokens.refreshToken();
+      console.log('🔑 Refresh token Microsoft obtenu');
+    } catch (_) {
+      console.log('ℹ️  Pas de refresh token Microsoft dans cette réponse');
+    }
+
+    // ── 5. Créer/mettre à jour l'utilisateur en base ────────────────────────
+    const user = await createUserFromMicrosoft(
+      microsoftUser,
+      tokens.accessToken(),
+      refreshToken,
+      new Date(Date.now() + (tokens.expiresIn || 3600) * 1000)
+    );
+
+    // ── 6. Créer une session Lucia ──────────────────────────────────────────
+    const session = await lucia.createSession(user.id, {});
+    const sessionCookie = lucia.createSessionCookie(session.id);
+
+    res.appendHeader('Set-Cookie', sessionCookie.serialize());
+    console.log(`✅ Connexion Outlook réussie : ${user.email}`);
+    res.redirect('/');
+  } catch (err) {
+    logError('AuthOutlookCallback', err, {
+      query: JSON.stringify(req.query),
+      cookies: (req.headers.cookie || '').substring(0, 300),
+      stack: err.stack?.substring(0, 500),
+    });
+    console.error(`\n❌ ERREUR OAuth Outlook Callback : ${err.message}`);
+    if (err.cause) console.error(`   Cause : ${err.cause}`);
+    const errorMessage = (process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV)
+      ? 'Erreur lors de l\'authentification Outlook.'
+      : `Erreur lors de l'authentification Outlook : ${err.message}`;
+    res.status(500).json({ success: false, error: errorMessage });
   }
 });
 
@@ -339,7 +604,7 @@ app.get('/api/me', async (req, res) => {
 //  CONTACTS — Routes protégées par requireAuth
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── POST /api/upload — Parse le fichier Excel et insère en base ──────────────
+// ─── POST /api/upload — Parse dynamique du fichier Excel (retourne headers + preview) ─
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Aucun fichier reçu.' });
@@ -350,38 +615,89 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(sheet);
 
-    const contactsData = rows
-      .map(row => {
-        const name      = row['Nom du Contact (PI / Responsable)'] || '';
-        const structure = row['Structure / Laboratoire'] || '';
-        const location  = row['Localisation'] || '';
-        const research  = row['Axe de Recherche Principal'] || '';
-        const email     = (row['Adresse E-mail'] || '').trim();
+    // Extraire les headers (1ère ligne) et les données brutes
+    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    if (rawData.length < 2) {
+      return res.status(400).json({ success: false, error: 'Le fichier Excel doit contenir au moins une ligne d\'en-têtes et une ligne de données.' });
+    }
 
-        if (!email) return null;
+    const headers = rawData[0].map(h => String(h || '').trim());
+    const rows = rawData.slice(1).filter(row => row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== ''));
 
-        const { subject, body } = generateEmail({ name, structure, location, research });
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'Aucune donnée valide trouvée après les en-têtes.' });
+    }
 
-        return { name, structure, location, research, email, subject, body, userId: user.id };
-      })
-      .filter(Boolean);
+    // Détecter la colonne email
+    const emailCol = detectEmailColumn(headers, rows);
+    if (!emailCol) {
+      return res.status(400).json({
+        success: false,
+        error: 'Impossible de détecter une colonne contenant des adresses email. Vérifiez que votre fichier contient une colonne "Adresse Mail" ou une colonne avec des adresses email valides.',
+      });
+    }
+
+    // Preview : 3 premières lignes
+    const preview = rows.slice(0, 3).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+      return obj;
+    });
+
+    res.json({
+      success: true,
+      headers,
+      rows,
+      rowCount: rows.length,
+      emailColumn: emailCol,
+      preview,
+    });
+  } catch (err) {
+    logError('UploadExcel', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── POST /api/campaign — Reçoit les contacts compilés et les insère en base ──
+app.post('/api/campaign', async (req, res) => {
+  try {
+    const user = await getUserForSend(req);
+    if (!user) return res.status(401).json({ error: 'Non authentifié.' });
+
+    const { contacts } = req.body;
+
+    if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
+      return res.status(400).json({ success: false, error: 'Aucun contact fourni.' });
+    }
+
+    const contactsData = contacts
+      .filter(c => c.email && c.email.trim())
+      .map(c => ({
+        userId: user.id,
+        email: c.email.trim(),
+        name: c.name || '',
+        subject: c.subject || '',
+        body: c.body || '',
+        rawData: JSON.stringify(c.rawData || {}),
+        status: 'pending',
+      }));
 
     if (contactsData.length === 0) {
-      return res.status(400).json({ success: false, error: 'Aucun contact valide trouvé dans le fichier.' });
+      return res.status(400).json({ success: false, error: 'Aucun contact avec un email valide.' });
     }
 
     await prisma.contact.createMany({ data: contactsData });
 
-    const contacts = await prisma.contact.findMany({
+    const created = await prisma.contact.findMany({
       where: { userId: user.id, status: { not: 'deleted' } },
-      orderBy: { id: 'asc' }
+      orderBy: { id: 'asc' },
+      take: contactsData.length,
     });
 
-    res.json({ success: true, contacts });
+    res.json({ success: true, count: contactsData.length, contacts: created });
   } catch (err) {
-    logError('UploadExcel', err);
+    logError('CampaignCreate', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -488,7 +804,7 @@ async function getUserForSend(req) {
   return await prisma.user.findUnique({ where: { id: user.id } });
 }
 
-// ─── Helper : envoyer un email (branchement Gmail vs Zimbra selon authType) ──
+// ─── Helper : envoyer un email (branchement Gmail / Outlook / Zimbra selon authType) ──
 async function sendEmailViaProvider(user, { to, subject, body, attachmentPath }) {
   if (user.authType === 'google' && user.accessToken) {
     // Envoi via Gmail API avec le token OAuth Google
@@ -514,8 +830,32 @@ async function sendEmailViaProvider(user, { to, subject, body, attachmentPath })
     }
 
     return result;
+  } else if (user.authType === 'outlook' && user.accessToken) {
+    // Envoi via Microsoft Graph API avec le token OAuth Outlook
+    const result = await outlookClient.sendEmail({
+      accessToken:   user.accessToken,
+      refreshToken:  user.refreshToken,
+      from:          `${user.name || ''} <${user.email}>`,
+      to,
+      subject,
+      body,
+      attachmentPath: attachmentPath && fs.existsSync(attachmentPath) ? attachmentPath : undefined,
+    });
+
+    // Si le token a été rafraîchi, mettre à jour en base
+    if (result.newAccessToken) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          accessToken:    result.newAccessToken,
+          tokenExpiresAt: result.newTokenExpiresAt,
+        },
+      });
+    }
+
+    return result;
   } else {
-    // Fallback Zimbra SOAP (utilisateur zimbra ou google sans token)
+    // Fallback Zimbra SOAP (utilisateur zimbra ou google/outlook sans token)
     await zimbraClient.sendEmail({
       to:             to,
       subject:        subject,
@@ -526,7 +866,16 @@ async function sendEmailViaProvider(user, { to, subject, body, attachmentPath })
   }
 }
 
-// ─── POST /api/send/:id — Envoyer un mail (Gmail API ou Zimbra SOAP) ────────
+// ─── Helper : obtenir le nom lisible du provider ──────────────────────────────
+function getProviderLabel(authType) {
+  switch (authType) {
+    case 'google': return 'Gmail API';
+    case 'outlook': return 'Microsoft Graph';
+    default: return 'Zimbra SOAP';
+  }
+}
+
+// ─── POST /api/send/:id — Envoyer un mail (Gmail API / Microsoft Graph / Zimbra SOAP) ──
 app.post('/api/send/:id', async (req, res) => {
   let contact;
   try {
@@ -556,7 +905,7 @@ app.post('/api/send/:id', async (req, res) => {
       data: { status: 'sent' }
     });
 
-    const via = user.authType === 'google' ? 'Gmail API' : 'Zimbra SOAP';
+    const via = getProviderLabel(user.authType);
     console.log(`✅ Mail envoyé à ${contact.email} via ${via} (${user.email})`);
     res.json({ success: true, via, from: user.email });
   } catch (err) {
@@ -572,16 +921,17 @@ app.post('/api/test-send', async (req, res) => {
 
     // Si non authentifié, fallback Zimbra
     const useGmail = user && user.authType === 'google' && user.accessToken;
+    const useOutlook = user && user.authType === 'outlook' && user.accessToken;
 
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
     const hasAttachment  = fs.existsSync(attachmentPath);
-    const fromEmail = useGmail ? user.email : process.env.SMTP_USER;
-    const viaStr = useGmail ? 'Gmail API' : 'Zimbra SOAP';
+    const fromEmail = (useGmail || useOutlook) ? user.email : process.env.SMTP_USER;
+    const viaStr = useGmail ? 'Gmail API' : (useOutlook ? 'Microsoft Graph' : 'Zimbra SOAP');
 
     await sendEmailViaProvider(user || {}, {
       to:             'hidayacine01@gmail.com',
       subject:        `Test envoi mail + pièce jointe — ${viaStr}`,
-      body:           `Ceci est un mail de test envoyé via ${viaStr}.\n\nCompte expéditeur : ${fromEmail}\nServeur : ${useGmail ? 'Gmail API' : process.env.ZIMBRA_URL}\nPièce jointe : ${hasAttachment ? 'CV_LETTRE_DE_RECOMMANDATION.pdf ✅' : 'absente ❌'}`,
+      body:           `Ceci est un mail de test envoyé via ${viaStr}.\n\nCompte expéditeur : ${fromEmail}\nServeur : ${(useGmail || useOutlook) ? 'OAuth API' : process.env.ZIMBRA_URL}\nPièce jointe : ${hasAttachment ? 'CV_LETTRE_DE_RECOMMANDATION.pdf ✅' : 'absente ❌'}`,
       attachmentPath: hasAttachment ? attachmentPath : undefined,
     });
 
@@ -623,6 +973,7 @@ app.post('/api/send-all', async (req, res) => {
     const results = [];
     const attachmentPath = path.join(__dirname, 'CV_LETTRE_DE_RECOMMANDATION.pdf');
     const hasAttachment = fs.existsSync(attachmentPath);
+    const via = getProviderLabel(user.authType);
 
     for (const contact of pending) {
       try {
@@ -639,7 +990,6 @@ app.post('/api/send-all', async (req, res) => {
         });
 
         results.push({ id: contact.id, email: contact.email, success: true });
-        const via = user.authType === 'google' ? 'Gmail API' : 'Zimbra SOAP';
         console.log(`✅ Mail envoyé à ${contact.email} via ${via}`);
       } catch (err) {
         results.push({ id: contact.id, email: contact.email, success: false, error: err.message });
@@ -783,7 +1133,7 @@ app.use((err, req, res, next) => {
   });
   res.status(500).json({
     success: false,
-    error: process.env.NODE_ENV === 'production'
+    error: process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV
       ? 'Erreur interne du serveur.'
       : err.message || 'Erreur interne du serveur.',
   });
@@ -795,6 +1145,7 @@ app.listen(PORT, () => {
   console.log(`\n🚀 Application démarrée sur http://localhost:${PORT}`);
   console.log(`📧 Compte  : ${process.env.SMTP_USER}`);
   console.log(`🔗 Zimbra  : ${process.env.ZIMBRA_URL}`);
+  console.log(`🔷 Outlook : OAuth configuré (redirect: ${process.env.OUTLOOK_REDIRECT_URI})`);
   console.log(`🧪 Test auth : http://localhost:${PORT}/api/test-auth`);
   console.log(`📁 Dossier static : ${staticDir}`);
   console.log(`🌐 Environnement : ${process.env.NODE_ENV || 'development'}\n`);

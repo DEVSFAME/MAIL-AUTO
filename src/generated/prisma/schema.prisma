@@ -7,12 +7,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model User {
   id             String     @id @default(cuid())
   googleId       String?    @unique
+  microsoftId    String?    @unique
   zimbraUsername String?    @unique
   email          String?    @unique
   name           String?
@@ -20,7 +21,7 @@ model User {
   accessToken    String?
   refreshToken   String?
   tokenExpiresAt DateTime?
-  authType       String     @default("google") // "google" ou "zimbra"
+  authType       String     @default("google") // "google", "zimbra", "outlook"
   sessions       Session[]
   contacts       Contact[]
   documents      Document[]
@@ -47,15 +48,14 @@ model Document {
 }
 
 model Contact {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    String?
-  user      User?   @relation(references: [id], fields: [userId])
-  name      String
-  structure String
-  location  String
-  research  String
+  user      User?    @relation(references: [id], fields: [userId])
+  rawData   String   @default("{}")
   email     String
+  name      String   @default("")
   subject   String
   body      String
-  status    String  @default("pending")
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
 }

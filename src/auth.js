@@ -1,24 +1,22 @@
 /**
- * auth.js — Configuration de Lucia (session) + Google OAuth2 (Arctic)
+ * auth.js — Configuration de Lucia (session) + Google OAuth2 + Microsoft Entra ID (Arctic)
  *
  * Fournit :
  *   - lucia           : instance Lucia configurée avec Prisma adapter
  *   - googleAuth      : client OAuth2 Google (via Arctic)
+ *   - getGoogleAuth   : factory pour créer un client Google avec redirect_uri dynamique
+ *   - outlookAuth     : client OAuth2 Microsoft Entra ID (via Arctic)
+ *   - getOutlookAuth  : factory pour créer un client Microsoft avec redirect_uri dynamique
  *   - requireAuth     : middleware Express pour protéger les routes
- *   - createUserIfNotExists : helper pour créer/mettre à jour un utilisateur
+ *   - createUserIfNotExists : helpers pour créer/mettre à jour un utilisateur
  */
 
 const { Lucia } = require('lucia');
 const { PrismaAdapter } = require('@lucia-auth/adapter-prisma');
-const { Google } = require('arctic');
+const { Google, MicrosoftEntraId } = require('arctic');
 
-// ─── Prisma ──────────────────────────────────────────────────────────────────
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { PrismaClient } = require('./generated/prisma');
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+// ─── Prisma (instance unique partagée) ────────────────────────────────────────
+const prisma = require('./db');
 
 // ─── Lucia ───────────────────────────────────────────────────────────────────
 const lucia = new Lucia(
@@ -37,17 +35,47 @@ const lucia = new Lucia(
       picture: attributes.picture,
       authType: attributes.authType,
       googleId: attributes.googleId,
+      microsoftId: attributes.microsoftId,
       zimbraUsername: attributes.zimbraUsername,
     }),
   }
 );
 
 // ─── Google OAuth2 (via Arctic) ──────────────────────────────────────────────
-const googleAuth = new Google(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+// Factory : permet de créer un client Google avec un redirect_uri dynamique.
+// Utile pour supporter ngrok / localhost / production sans changer le .env.
+
+function getGoogleAuth(redirectUri) {
+  const uri = redirectUri || process.env.GOOGLE_REDIRECT_URI;
+  if (!uri) throw new Error('GOOGLE_REDIRECT_URI non défini. Vérifiez le fichier .env');
+  return new Google(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    uri
+  );
+}
+
+// Instance par défaut (utilise GOOGLE_REDIRECT_URI du .env)
+const googleAuth = getGoogleAuth();
+
+// ─── Microsoft Entra ID OAuth2 (via Arctic) ──────────────────────────────────
+// Tenant "organizations" pour comptes Azure AD / Microsoft 365 professionnels
+// Scopes : openid, profile, email, offline_access, Mail.Send
+
+function getOutlookAuth(redirectUri) {
+  const uri = redirectUri || process.env.OUTLOOK_REDIRECT_URI;
+  if (!uri) throw new Error('OUTLOOK_REDIRECT_URI non défini. Vérifiez le fichier .env');
+  const tenant = process.env.OUTLOOK_TENANT || 'consumers';
+  return new MicrosoftEntraId(
+    tenant,
+    process.env.OUTLOOK_CLIENT_ID,
+    process.env.OUTLOOK_CLIENT_SECRET,
+    uri
+  );
+}
+
+// Instance par défaut (utilise OUTLOOK_REDIRECT_URI du .env)
+const outlookAuth = getOutlookAuth();
 
 // ─── Middleware requireAuth ──────────────────────────────────────────────────
 async function requireAuth(req, res, next) {
@@ -120,6 +148,55 @@ async function createUserFromGoogle(googleUser, accessToken, refreshToken, expir
   return user;
 }
 
+// ─── Helper : créer ou mettre à jour un utilisateur Microsoft ────────────────
+async function createUserFromMicrosoft(microsoftUser, accessToken, refreshToken, expiresAt) {
+  const { sub: microsoftId, mail, userPrincipalName, displayName } = microsoftUser;
+  // Microsoft Graph retourne `mail` (comptes Exchange Online) ou `userPrincipalName`
+  const email = mail || userPrincipalName;
+  const name = displayName;
+
+  // Chercher un utilisateur existant par microsoftId ou email
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { microsoftId },
+        { email: email || undefined },
+      ].filter(Boolean),
+    },
+  });
+
+  if (user) {
+    // Mettre à jour les tokens et infos
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        microsoftId: microsoftId || user.microsoftId,
+        email: email || user.email,
+        name: name || user.name,
+        accessToken,
+        refreshToken: refreshToken || user.refreshToken,
+        tokenExpiresAt: expiresAt || user.tokenExpiresAt,
+        authType: 'outlook',
+      },
+    });
+  } else {
+    // Créer un nouvel utilisateur
+    user = await prisma.user.create({
+      data: {
+        microsoftId,
+        email,
+        name,
+        accessToken,
+        refreshToken,
+        tokenExpiresAt: expiresAt,
+        authType: 'outlook',
+      },
+    });
+  }
+
+  return user;
+}
+
 // ─── Helper : créer ou mettre à jour un utilisateur Zimbra ───────────────────
 async function createUserFromZimbra(username) {
   let user = await prisma.user.findFirst({
@@ -181,12 +258,48 @@ async function refreshGoogleToken(refreshToken) {
   };
 }
 
+// ─── Helper : rafraîchir un access token Microsoft ───────────────────────────
+async function refreshOutlookToken(refreshToken) {
+  if (!refreshToken) {
+    throw new Error('Aucun refresh token Microsoft disponible.');
+  }
+
+  const tenant = process.env.OUTLOOK_TENANT || 'consumers';
+  const response = await fetch(`https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     process.env.OUTLOOK_CLIENT_ID,
+      client_secret: process.env.OUTLOOK_CLIENT_SECRET,
+      grant_type:    'refresh_token',
+      refresh_token: refreshToken,
+      scope:         'openid profile email offline_access https://graph.microsoft.com/Mail.Send',
+    }).toString(),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Échec du rafraîchissement du token Microsoft (${response.status}): ${errBody}`);
+  }
+
+  const data = await response.json();
+  return {
+    accessToken:  data.access_token,
+    expiresIn:    data.expires_in || 3600,
+  };
+}
+
 module.exports = {
   lucia,
   googleAuth,
+  getGoogleAuth,
+  outlookAuth,
+  getOutlookAuth,
   requireAuth,
   createUserFromGoogle,
+  createUserFromMicrosoft,
   createUserFromZimbra,
   refreshGoogleToken,
+  refreshOutlookToken,
   prisma,
 };

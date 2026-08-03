@@ -11,14 +11,10 @@
             "id": "a18c76f0cf056375",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "docker tuto.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "docker tuto"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Vue graphique"
             }
           }
         ]
@@ -94,7 +90,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docker tuto.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +99,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Rétrolien pour docker tuto"
+              "title": "Rétroliens"
             }
           },
           {
@@ -113,12 +108,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docker tuto.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Liens sortants de docker tuto"
+              "title": "Liens sortants"
             }
           },
           {
@@ -156,13 +150,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "docker tuto.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Plan de docker tuto"
+              "title": "Plan"
             }
           }
         ]
@@ -185,44 +178,44 @@
   },
   "active": "a18c76f0cf056375",
   "lastOpenFiles": [
-    "graphify-out/cache/ast/6c3af5d4a694a1e8ae8cced79f72e16d86e225026ef2631e2eaf5b6c2cc453f8.json",
-    "graphify-out/cache/ast/0b29899882fd32ffdbc483e0fb7db6c561c94e0344c972e5bc730e37864849c7.json",
-    "node_modules/codepage/types/index.d.ts",
-    "node_modules/codepage/README.md",
-    "node_modules/codepage/types/tsconfig.json",
-    "node_modules/codepage/package.json",
-    "node_modules/codepage/dist/sbcs.full.js",
-    "node_modules/codepage/cputils.js",
-    "node_modules/codepage/cptable.js",
+    "00_Dashboard.md",
+    "node_modules/@prisma/adapter-better-sqlite3/package.json",
+    "node_modules/@prisma/adapter-better-sqlite3/README.md",
+    "node_modules/@prisma/adapter-better-sqlite3/LICENSE",
+    "node_modules/@prisma/driver-adapter-utils/dist 2",
+    "node_modules/minimist/example/parse.js",
+    "node_modules/minimist/package.json",
+    "node_modules/minimist/index.js",
+    "node_modules/minimist/example",
+    "node_modules/minimist/README.md",
+    "node_modules/minimist/LICENSE",
+    "node_modules/minimist",
+    "node_modules/@lucia-auth/adapter-prisma/dist 2",
+    "node_modules/napi-build-utils/index.md",
+    "node_modules/@prisma/driver-adapter-utils/README.md",
+    "node_modules/crc-32/README 2.md",
+    "node_modules/xlsx/CHANGELOG 2.md",
+    "docker tuto.md",
+    "node_modules/pg-types/node_modules/postgres-array/readme.md",
+    "node_modules/pg-types/README.md",
+    "node_modules/@types/node/README.md",
+    "node_modules/@types/pg/README.md",
+    "node_modules/@prisma/adapter-pg/README.md",
+    "node_modules/xtend/README.md",
+    "node_modules/postgres-bytea/readme.md",
+    "node_modules/split2/README.md",
+    "node_modules/postgres-interval/readme.md",
+    "node_modules/postgres-date/readme.md",
+    "node_modules/pg-int8/README.md",
+    "node_modules/pgpass/README.md",
+    "node_modules/pg-pool/README.md",
+    "node_modules/pg-cloudflare/README.md",
+    "node_modules/pg-connection-string/README.md",
+    "node_modules/undici-types/README.md",
+    "node_modules/pg-protocol/README.md",
+    "node_modules/pg/README.md",
     "node_modules/xlsx/formats.png",
     "node_modules/xlsx/legend.png",
-    "node_modules/xlsx/bin/xlsx.njs",
-    "node_modules/xlsx/bin",
-    "node_modules/xlsx/xlsx.mjs",
-    "node_modules/xlsx/README.md",
-    "node_modules/nodemailer/CODE_OF_CONDUCT.md",
-    "node_modules/nodemailer/README.md",
-    "node_modules/nodemailer/CHANGELOG.md",
-    "node_modules/semver/README.md",
-    "node_modules/object-inspect/CHANGELOG.md",
-    "node_modules/body-parser/node_modules/qs/README.md",
-    "node_modules/body-parser/node_modules/qs/LICENSE.md",
-    "node_modules/body-parser/node_modules/qs/CHANGELOG.md",
-    "node_modules/bignumber.js/README.md",
-    "node_modules/bignumber.js/LICENCE.md",
-    "node_modules/body-parser/README.md",
-    "node_modules/bignumber.js/CHANGELOG.md",
-    "node_modules/dotenv/SECURITY.md",
-    "node_modules/has-symbols/README.md",
-    "node_modules/has-symbols/CHANGELOG.md",
-    "node_modules/dotenv/README.md",
-    "node_modules/body-parser/HISTORY.md",
-    "node_modules/has-tostringtag/README.md",
-    "node_modules/es-errors/README.md",
-    "node_modules/es-errors/CHANGELOG.md",
-    "node_modules/has-tostringtag/CHANGELOG.md",
-    "node_modules/function-bind/README.md",
-    "node_modules/get-intrinsic/README.md",
     "node_modules/retry/equation.gif",
     "Sans titre.canvas",
     "Automatisation MAIL_OLD/node_modules/xlsx/legend.png",

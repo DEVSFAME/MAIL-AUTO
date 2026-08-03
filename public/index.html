@@ -66,13 +66,7 @@
       <div class="login-card">
         <!-- Logo -->
         <div class="login-logo">
-          <div class="login-logo-icon">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-          </div>
-          <h1 class="login-brand-name">MailCandid</h1>
+          <img src="logo.png" alt="MailCandid" class="login-logo-img" />
         </div>
 
         <!-- Tagline with word-animate -->
@@ -85,7 +79,7 @@
           <span class="word-animate" data-delay="1000">Connectez</span>
           <span class="word-animate" data-delay="1200">votre</span>
           <span class="word-animate" data-delay="1400">boîte</span>
-          <span class="word-animate" data-delay="1600">Gmail</span>
+          <span class="word-animate" data-delay="1600">mail</span>
           <span class="word-animate" data-delay="1800">pour</span>
           <span class="word-animate" data-delay="2000">envoyer</span>
           <span class="word-animate" data-delay="2200">des</span>
@@ -109,6 +103,11 @@
             Se connecter avec Google
           </button>
 
+          <button id="outlookLoginBtn" class="btn-outlook">
+            <img src="icone-outlook.png" width="27" height="27" alt="Outlook" />
+            Se connecter avec Outlook
+          </button>
+
           <div class="login-divider"><span>ou</span></div>
 
           <button id="zimbraLoginBtn" class="btn-zimbra">
@@ -130,6 +129,15 @@
         </p>
       </div>
     </div>
+
+    <!-- Footer IMPETUS -->
+    <div class="login-impetus-footer">
+      <img src="logo.png" alt="IMPETUS" class="impetus-logo-img" />
+      <span class="impetus-sep">—</span>
+      <span class="impetus-dev">Développé par HIDA Yacine</span>
+      <span class="impetus-sep">—</span>
+      <span class="impetus-legal">Propriété intellectuelle exclusive déposée</span>
+    </div>
   </section>
 
   <!-- ═══════════════════════════════════ APPLICATION ═══════════════════════════════ -->
@@ -147,16 +155,7 @@
     <header class="app-header">
       <div class="header-inner">
         <div class="brand">
-          <div class="brand-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-          </div>
-          <div class="brand-text">
-            <span class="brand-name">MailCandid</span>
-            <span class="brand-sub">Dashboard AI</span>
-          </div>
+          <img src="logo.png" alt="MailCandid" class="brand-logo-img" />
         </div>
 
         <!-- Limelight Navigation -->
@@ -397,6 +396,15 @@
       </section>
 
     </main>
+
+    <!-- Footer IMPETUS -->
+    <footer class="app-impetus-footer">
+      <img src="logo.png" alt="IMPETUS" class="impetus-logo-img" />
+      <span class="impetus-sep">—</span>
+      <span class="impetus-dev">Développé par HIDA Yacine</span>
+      <span class="impetus-sep">—</span>
+      <span class="impetus-legal">Propriété intellectuelle exclusive déposée</span>
+    </footer>
   </section>
 
   <!-- ═══════════════════════════════════ MODAL DÉTAIL CONTACT ═══════════════════ -->
@@ -577,7 +585,7 @@
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
           </div>
-          <p id="sendAllText" style="text-align:center;color:#cbd5e1;font-size:0.95rem;margin-top:0.75rem"></p>
+          <p id="sendAllText" style="text-align:center;color:#94A3B8;font-size:0.95rem;margin-top:0.75rem"></p>
         </div>
         <div id="sendAllProgress" style="display:none">
           <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
@@ -600,11 +608,89 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════ MODALE CONFIGURATION CAMPAGNE ════════════════ -->
+  <div class="modal-overlay" id="campaignModalOverlay">
+    <div class="modal campaign-modal" id="campaignModal">
+      <!-- Header -->
+      <div class="campaign-header">
+          <div class="campaign-header-icon">
+            <img src="icone-outlook.png" alt="Campagne" style="width:100%;height:100%;object-fit:contain;" />
+          </div>
+        <div class="campaign-header-text">
+          <h3>Configuration du message</h3>
+          <p>Personnalisez votre email. Cliquez sur les variables pour les insérer dans votre texte.</p>
+        </div>
+        <button class="modal-close-btn" id="campaignModalCloseBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Barre des Variables (tags) -->
+      <div class="campaign-tags-section">
+        <span class="campaign-tags-label">Variables disponibles :</span>
+        <div class="campaign-tags-bar" id="campaignTagsBar">
+          <!-- Généré dynamiquement -->
+        </div>
+      </div>
+
+      <!-- Indicateur Email détecté -->
+      <div class="campaign-email-indicator" id="campaignEmailIndicator">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Colonne e-mail détectée automatiquement : <strong id="detectedEmailCol">—</strong></span>
+      </div>
+
+      <!-- Formulaire de rédaction -->
+      <div class="campaign-form">
+        <div class="campaign-form-group">
+          <label class="campaign-label" for="campaignNameColumn">Nom ou structure</label>
+          <select id="campaignNameColumn" class="campaign-select">
+            <option value="">— Colonne ignorée (Sans nom) —</option>
+          </select>
+          <p class="campaign-hint">Sélectionnez la colonne qui servira de nom dans les cartes. Laissez vide pour "Sans nom".</p>
+        </div>
+
+        <div class="campaign-form-group">
+          <label class="campaign-label" for="campaignSubject">Sujet</label>
+          <input type="text" id="campaignSubject" class="campaign-input" placeholder="Ex: Candidature spontanée — {{Poste}}" />
+        </div>
+
+        <div class="campaign-form-group">
+          <label class="campaign-label" for="campaignBody">Corps du message</label>
+          <textarea id="campaignBody" class="campaign-textarea" placeholder="Rédigez votre message ici... Utilisez les variables ci-dessus pour personnaliser chaque email."></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="campaign-footer">
+        <button class="btn-ghost" id="campaignCancelBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Annuler
+        </button>
+        <button class="btn-campaign-generate" id="campaignGenerateBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          Générer la campagne
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ⚠️ Scripts chargés dans l'ordre -->
   <script src="config.js"></script>
   <script src="digital-serenity.js"></script>
   <script src="limelight-nav.js"></script>
   <script src="glowing-shadow.js"></script>
   <script src="app.js"></script>
+  <script src="test-refonte.js"></script>
 </body>
 </html>

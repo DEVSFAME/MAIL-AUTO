@@ -114,15 +114,13 @@ Prisma.NullTypes = NullTypes
  */
 
 exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
-  ReadUncommitted: 'ReadUncommitted',
-  ReadCommitted: 'ReadCommitted',
-  RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
 
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   googleId: 'googleId',
+  microsoftId: 'microsoftId',
   zimbraUsername: 'zimbraUsername',
   email: 'email',
   name: 'name',
@@ -154,24 +152,18 @@ exports.Prisma.DocumentScalarFieldEnum = {
 exports.Prisma.ContactScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
-  name: 'name',
-  structure: 'structure',
-  location: 'location',
-  research: 'research',
+  rawData: 'rawData',
   email: 'email',
+  name: 'name',
   subject: 'subject',
   body: 'body',
-  status: 'status'
+  status: 'status',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
-};
-
-exports.Prisma.QueryMode = {
-  default: 'default',
-  insensitive: 'insensitive'
 };
 
 exports.Prisma.NullsOrder = {
