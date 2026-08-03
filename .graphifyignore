@@ -1,0 +1,42 @@
+# ─── Dépendances ────────────────────────────────────────────────────
+node_modules/
+.venv/
+venv/
+
+# ─── Build / Dist ──────────────────────────────────────────────────
+dist/
+build/
+.next/
+
+# ─── Git ────────────────────────────────────────────────────────────
+.git/
+
+# ─── Logs ───────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ─── Cache ──────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.cache/
+.cache
+
+# ─── OS ─────────────────────────────────────────────────────────────
+.DS_Store
+
+# ─── Fichiers uploadés (binaires, sans intérêt pour l'analyse) ─────
+uploads/
+
+# ─── Docker / Environnement ────────────────────────────────────────
+.env
+.env.*
+
+# ─── 🚨 Plomberie Prisma (généré automatiquement, pas du code métier)
+src/generated/
+prisma/client/
+prisma/runtime/
+prisma/migrations/
+node_modules/.prisma/
+
+# ─── Rapports Graphify (évite la pollution croisée) ────────────────
+graphify-out/

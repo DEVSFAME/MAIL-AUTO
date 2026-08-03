@@ -1,0 +1,12 @@
+{
+  "userIgnoreFilters": [
+    "node_modules/",
+    ".git/",
+    "dist/",
+    "build/",
+    ".next/",
+    "package-lock.json",
+    "uploads/",
+    "prisma/migrations/"
+  ]
+}

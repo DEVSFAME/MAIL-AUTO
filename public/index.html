@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MailCandid — Automatisation de Candidatures</title>
+  <title>MailCandid — Dashboard AI Futuriste</title>
   <link rel="stylesheet" href="style.css" />
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,138 +12,402 @@
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════ HEADER ═══════════════════════════════════ -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-            <polyline points="22,6 12,13 2,6"></polyline>
+  <!-- ═══════════════════════════════════ LANDING PAGE ══════════════════════════════ -->
+  <section id="loginSection">
+    <!-- DigitalSerenity SVG Grid Backdrop -->
+    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <pattern id="gridDarkResponsive" width="60" height="60" patternUnits="userSpaceOnUse">
+          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(100, 116, 139, 0.1)" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#gridDarkResponsive)" />
+      <line x1="0" y1="20%" x2="100%" y2="20%" class="grid-line" style="animation-delay:0.5s" />
+      <line x1="0" y1="80%" x2="100%" y2="80%" class="grid-line" style="animation-delay:1s" />
+      <line x1="20%" y1="0" x2="20%" y2="100%" class="grid-line" style="animation-delay:1.5s" />
+      <line x1="80%" y1="0" x2="80%" y2="100%" class="grid-line" style="animation-delay:2s" />
+      <line x1="50%" y1="0" x2="50%" y2="100%" class="grid-line" style="animation-delay:2.5s;opacity:0.05" />
+      <line x1="0" y1="50%" x2="100%" y2="50%" class="grid-line" style="animation-delay:3s;opacity:0.05" />
+      <circle cx="20%" cy="20%" r="2" class="detail-dot" style="animation-delay:3s" />
+      <circle cx="80%" cy="20%" r="2" class="detail-dot" style="animation-delay:3.2s" />
+      <circle cx="20%" cy="80%" r="2" class="detail-dot" style="animation-delay:3.4s" />
+      <circle cx="80%" cy="80%" r="2" class="detail-dot" style="animation-delay:3.6s" />
+      <circle cx="50%" cy="50%" r="1.5" class="detail-dot" style="animation-delay:4s" />
+    </svg>
+
+    <!-- Corner decorative elements -->
+    <div class="corner-element-animate" style="top:1rem;left:1rem;z-index:1">
+      <div class="absolute top-0 left-0 w-2 h-2" style="position:absolute;top:0;left:0;width:8px;height:8px;background:rgba(203,213,225,0.3);border-radius:50%"></div>
+    </div>
+    <div class="corner-element-animate" style="top:1rem;right:1rem;z-index:1">
+      <div class="absolute top-0 right-0 w-2 h-2" style="position:absolute;top:0;right:0;width:8px;height:8px;background:rgba(203,213,225,0.3);border-radius:50%"></div>
+    </div>
+    <div class="corner-element-animate" style="bottom:1rem;left:1rem;z-index:1">
+      <div class="absolute bottom-0 left-0 w-2 h-2" style="position:absolute;bottom:0;left:0;width:8px;height:8px;background:rgba(203,213,225,0.3);border-radius:50%"></div>
+    </div>
+    <div class="corner-element-animate" style="bottom:1rem;right:1rem;z-index:1">
+      <div class="absolute bottom-0 right-0 w-2 h-2" style="position:absolute;bottom:0;right:0;width:8px;height:8px;background:rgba(203,213,225,0.3);border-radius:50%"></div>
+    </div>
+
+    <!-- Floating elements -->
+    <div class="floating-element-animate" style="top:25%;left:15%;z-index:1;animation-delay:0.5s"></div>
+    <div class="floating-element-animate" style="top:60%;left:85%;z-index:1;animation-delay:1s"></div>
+    <div class="floating-element-animate" style="top:40%;left:10%;z-index:1;animation-delay:1.5s"></div>
+    <div class="floating-element-animate" style="top:75%;left:90%;z-index:1;animation-delay:2s"></div>
+
+    <div class="login-particles">
+      <div class="particle p1"></div>
+      <div class="particle p2"></div>
+      <div class="particle p3"></div>
+      <div class="particle p4"></div>
+    </div>
+
+    <div class="login-container" style="position:relative;z-index:2">
+      <div class="login-card">
+        <!-- Logo -->
+        <div class="login-logo">
+          <img src="logo.png" alt="MailCandid" class="login-logo-img" />
+        </div>
+
+        <!-- Tagline with word-animate -->
+        <p class="login-tagline text-decoration-animate">
+          <span class="word-animate" data-delay="0">Automatisez</span>
+          <span class="word-animate" data-delay="300">vos</span>
+          <span class="word-animate" data-delay="600">candidatures</span>
+        </p>
+        <p class="login-description">
+          <span class="word-animate" data-delay="1000">Connectez</span>
+          <span class="word-animate" data-delay="1200">votre</span>
+          <span class="word-animate" data-delay="1400">boîte</span>
+          <span class="word-animate" data-delay="1600">mail</span>
+          <span class="word-animate" data-delay="1800">pour</span>
+          <span class="word-animate" data-delay="2000">envoyer</span>
+          <span class="word-animate" data-delay="2200">des</span>
+          <span class="word-animate" data-delay="2400">candidatures</span>
+          <span class="word-animate" data-delay="2600">personnalisées</span>
+          <span class="word-animate" data-delay="2800">directement</span>
+          <span class="word-animate" data-delay="3000">depuis</span>
+          <span class="word-animate" data-delay="3200">votre</span>
+          <span class="word-animate" data-delay="3400">compte.</span>
+        </p>
+
+        <!-- Boutons de connexion -->
+        <div class="login-buttons">
+          <button id="googleLoginBtn" class="btn-google">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+            </svg>
+            Se connecter avec Google
+          </button>
+
+          <button id="outlookLoginBtn" class="btn-outlook">
+            <img src="icone-outlook.png" width="27" height="27" alt="Outlook" />
+            Se connecter avec Outlook
+          </button>
+
+          <div class="login-divider"><span>ou</span></div>
+
+          <button id="zimbraLoginBtn" class="btn-zimbra">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Se connecter avec Zimbra
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <p class="login-footer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-        </div>
-        <div class="brand-text">
-          <span class="brand-name">MailCandid</span>
-          <span class="brand-sub">Automatisation de candidatures</span>
-        </div>
-      </div>
-      <div class="header-stats" id="headerStats" style="display:none">
-        <div class="stat-badge pending" id="statPending">
-          <span class="stat-dot"></span>
-          <span id="pendingCount">0</span> en attente
-        </div>
-        <div class="stat-badge sent" id="statSent">
-          <span class="stat-dot"></span>
-          <span id="sentCount">0</span> envoyés
-        </div>
-        <div class="stat-badge total">
-          <span class="stat-dot"></span>
-          <span id="totalCount">0</span> total
-        </div>
+          Vos identifiants ne sont jamais stockés. Connexion sécurisée via OAuth2.
+        </p>
       </div>
     </div>
-  </header>
 
-  <!-- ═══════════════════════════════════ MAIN ════════════════════════════════════ -->
-  <main class="main-content">
+    <!-- Footer IMPETUS -->
+    <div class="login-impetus-footer">
+      <img src="logo.png" alt="IMPETUS" class="impetus-logo-img" />
+      <span class="impetus-sep">—</span>
+      <span class="impetus-dev">Développé par HIDA Yacine</span>
+      <span class="impetus-sep">—</span>
+      <span class="impetus-legal">Propriété intellectuelle exclusive déposée</span>
+    </div>
+  </section>
 
-    <!-- ── UPLOAD ZONE ── -->
-    <section class="upload-section" id="uploadSection">
-      <div class="upload-card" id="dropZone">
-        <div class="upload-icon">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
+  <!-- ═══════════════════════════════════ APPLICATION ═══════════════════════════════ -->
+  <section id="appSection" style="display:none">
+
+    <!-- Particules décoratives (même style que login) -->
+    <div class="app-particles">
+      <div class="app-particle ap1"></div>
+      <div class="app-particle ap2"></div>
+      <div class="app-particle ap3"></div>
+      <div class="app-particle ap4"></div>
+    </div>
+
+    <!-- HEADER avec LimelightNav -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <img src="logo.png" alt="MailCandid" class="brand-logo-img" />
         </div>
-        <h2 class="upload-title">Déposez votre fichier Excel</h2>
-        <p class="upload-subtitle">Glissez-déposez votre fichier <strong>.xlsx</strong> ici, ou cliquez pour parcourir</p>
-        <button class="btn-browse" id="browseBtn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-          </svg>
-          Parcourir les fichiers
-        </button>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" />
-        <p class="upload-hint">Format accepté : Excel (.xlsx, .xls)</p>
 
-        <!-- Upload progress -->
-        <div class="upload-progress" id="uploadProgress">
-          <div class="progress-spinner"></div>
-          <span>Analyse du fichier en cours…</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── CONTACTS SECTION ── -->
-    <section class="contacts-section" id="contactsSection" style="display:none">
-
-      <!-- Toolbar -->
-      <div class="contacts-toolbar">
-        <div class="toolbar-left">
-          <h2 class="section-title">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Limelight Navigation -->
+        <nav class="limelight-nav" id="mainNav">
+          <button class="limelight-item active" data-tab="contacts" id="navContacts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
               <circle cx="9" cy="7" r="4"></circle>
               <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
-            Contacts importés
-          </h2>
-          <div class="filter-tabs">
-            <button class="filter-tab active" data-filter="all">Tous</button>
-            <button class="filter-tab" data-filter="pending">En attente</button>
-            <button class="filter-tab" data-filter="sent">Envoyés</button>
+            Contacts
+          </button>
+          <button class="limelight-item" data-tab="documents" id="navDocuments">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Documents
+          </button>
+          <button class="limelight-item" data-tab="logs" id="navLogs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+            Logs
+          </button>
+          <button class="limelight-item" data-tab="settings" id="navSettings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Settings
+          </button>
+          <!-- Limelight Spotlight -->
+          <div class="limelight-spotlight" id="limelightSpotlight"></div>
+        </nav>
+
+        <!-- User info & logout -->
+        <div class="header-right" id="headerRight">
+          <div class="header-stats" id="headerStats" style="display:none">
+            <div class="stat-badge pending" id="statPending">
+              <span class="stat-dot"></span>
+              <span id="pendingCount">0</span> en attente
+            </div>
+            <div class="stat-badge sent" id="statSent">
+              <span class="stat-dot"></span>
+              <span id="sentCount">0</span> envoyés
+            </div>
+            <div class="stat-badge total">
+              <span class="stat-dot"></span>
+              <span id="totalCount">0</span> total
+            </div>
+          </div>
+          <div class="user-info" id="userInfo">
+            <span class="user-avatar" id="userAvatar">?</span>
+            <span class="user-name" id="userName">Utilisateur</span>
+          </div>
+          <button class="btn-logout" id="logoutBtn" title="Se déconnecter">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Déconnexion
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- ── UPLOAD ZONE ── -->
+      <section class="upload-section" id="uploadSection">
+        <div class="upload-card" id="dropZone">
+          <div class="upload-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </div>
+          <h2 class="upload-title">Déposez votre fichier Excel</h2>
+          <p class="upload-subtitle">Glissez-déposez votre fichier <strong>.xlsx</strong> ici, ou cliquez pour parcourir</p>
+          <button class="btn-browse" id="browseBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Parcourir les fichiers
+          </button>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" />
+          <p class="upload-hint">Format accepté : Excel (.xlsx, .xls)</p>
+
+          <!-- Upload progress -->
+          <div class="upload-progress" id="uploadProgress">
+            <div class="progress-spinner"></div>
+            <span>Analyse du fichier en cours…</span>
           </div>
         </div>
-        <div class="toolbar-right">
-          <button class="btn-secondary" id="resetBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="1 4 1 10 7 10"></polyline>
-              <path d="M3.51 15a9 9 0 1 0 .49-3.4"></path>
-            </svg>
-            Nouveau fichier
-          </button>
-          <button class="btn-primary" id="sendAllBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-            Tout envoyer
-          </button>
+      </section>
+
+      <!-- ── CONTACTS SECTION ── -->
+      <section class="contacts-section" id="contactsSection" style="display:none">
+
+        <!-- Toolbar -->
+        <div class="contacts-toolbar">
+          <div class="toolbar-left">
+            <h2 class="section-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              Contacts importés
+            </h2>
+            <div class="filter-tabs">
+              <button class="filter-tab active" data-filter="all">Tous</button>
+              <button class="filter-tab" data-filter="pending">En attente</button>
+              <button class="filter-tab" data-filter="sent">Envoyés</button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn-secondary" id="selectModeBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+              Sélectionner
+            </button>
+            <!-- Batch Action Bar (cachée par défaut) -->
+            <div class="batch-bar" id="batchBar" style="display:none">
+              <div class="batch-count" id="batchCount">0 sélectionné</div>
+              <button class="btn-batch" id="batchSelectAllBtn" title="Tout sélectionner">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                </svg>
+                Tout
+              </button>
+              <button class="btn-batch btn-batch-send" id="batchSendBtn" title="Envoyer la sélection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+                Envoyer
+              </button>
+              <button class="btn-batch btn-batch-pending" id="batchPendingBtn" title="Mettre en attente">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Attente
+              </button>
+              <button class="btn-batch btn-batch-delete" id="batchDeleteBtn" title="Supprimer la sélection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                  <path d="M10 11v6"></path><path d="M14 11v6"></path>
+                  <path d="M9 6V4h6v2"></path>
+                </svg>
+                Supprimer
+              </button>
+              <button class="btn-batch btn-batch-cancel" id="batchCancelBtn" title="Annuler la sélection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <button class="btn-secondary" id="resetBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.4"></path>
+              </svg>
+              Nouveau fichier
+            </button>
+            <button class="btn-primary" id="sendAllBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+              Tout envoyer
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Search bar -->
-      <div class="search-bar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="text" id="searchInput" placeholder="Rechercher un contact, un labo…" />
-      </div>
+        <!-- Search bar -->
+        <div class="search-bar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Rechercher un contact, un labo…" />
+        </div>
 
-      <!-- Contact Grid -->
-      <div class="contacts-grid" id="contactsGrid">
-        <!-- Cards générées dynamiquement -->
-      </div>
+        <!-- Contact Grid -->
+        <div class="contacts-grid" id="contactsGrid">
+          <!-- Cards générées dynamiquement -->
+        </div>
 
-      <!-- Empty state -->
-      <div class="empty-state" id="emptyState" style="display:none">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-          <circle cx="9" cy="7" r="4"></circle>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-        </svg>
-        <p>Aucun contact trouvé</p>
-      </div>
-    </section>
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState" style="display:none">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          </svg>
+          <p>Aucun contact trouvé</p>
+        </div>
+      </section>
 
-  </main>
+      <!-- ── DOCUMENTS SECTION ── -->
+      <section class="documents-section" id="documentsSection">
+        <div class="documents-card">
+          <div class="documents-header">
+            <h3 class="section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              Mes documents <span class="doc-count" id="docCount">(0/5)</span>
+            </h3>
+            <button class="btn-secondary" id="docUploadBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Ajouter un PDF
+            </button>
+          </div>
+          <input type="file" id="docFileInput" accept=".pdf" multiple style="display:none" />
+          <div class="documents-list" id="documentsList">
+            <!-- Documents chargés dynamiquement -->
+          </div>
+          <p class="documents-hint">Format accepté : PDF uniquement. Maximum 5 fichiers.</p>
+        </div>
+      </section>
 
-  <!-- ═══════════════════════════════════ MODAL ════════════════════════════════════ -->
+    </main>
+
+    <!-- Footer IMPETUS -->
+    <footer class="app-impetus-footer">
+      <img src="logo.png" alt="IMPETUS" class="impetus-logo-img" />
+      <span class="impetus-sep">—</span>
+      <span class="impetus-dev">Développé par HIDA Yacine</span>
+      <span class="impetus-sep">—</span>
+      <span class="impetus-legal">Propriété intellectuelle exclusive déposée</span>
+    </footer>
+  </section>
+
+  <!-- ═══════════════════════════════════ MODAL DÉTAIL CONTACT ═══════════════════ -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal" id="modal">
 
@@ -175,7 +439,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
           </svg>
-          CV_LETTRE_DE_RECOMMANDATION.pdf
+          Pièces jointes incluses
         </span>
       </div>
 
@@ -238,6 +502,66 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════ MODAL BATCH (actions groupées) ═════════ -->
+  <div class="modal-overlay" id="batchModalOverlay">
+    <div class="modal modal-batch" id="batchModal">
+      <div class="modal-batch-glow"></div>
+      <div class="modal-batch-content">
+        <!-- Header -->
+        <div class="modal-batch-header">
+          <div class="batch-modal-icon" id="batchModalIcon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="batch-modal-title" id="batchModalTitle">Confirmer l'action</h3>
+          <button class="modal-close-btn" id="batchModalCloseBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Confirmation Content -->
+        <div class="batch-modal-confirm" id="batchModalConfirm">
+          <p class="batch-modal-desc" id="batchModalDesc">Vous allez effectuer cette action sur <strong>3 contact(s)</strong></p>
+          <div class="batch-modal-list" id="batchModalList"></div>
+        </div>
+
+        <!-- Progress Content (caché par défaut) -->
+        <div class="batch-modal-progress" id="batchModalProgress" style="display:none">
+          <div class="batch-progress-header">
+            <div class="progress-spinner" style="width:18px;height:18px;"></div>
+            <span id="batchProgressStatus">Envoi en cours…</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="batchProgressFill"></div>
+          </div>
+          <div class="batch-progress-details">
+            <span id="batchProgressCount">0/0</span>
+            <span class="batch-progress-pct" id="batchProgressPct">0%</span>
+          </div>
+          <div class="batch-progress-log" id="batchProgressLog">
+            <!-- Logs individuels insérés ici -->
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="batch-modal-footer" id="batchModalFooter">
+          <button class="btn-ghost" id="batchModalCancelBtn">Annuler</button>
+          <button class="btn-success" id="batchModalConfirmBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Confirmer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════════════════════════════ TOAST ════════════════════════════════════ -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -245,7 +569,7 @@
   <div class="modal-overlay" id="sendAllOverlay">
     <div class="modal modal-small">
       <div class="modal-header">
-        <h3 style="font-size:1.1rem;font-weight:700;color:#1e293b">Envoyer tous les mails</h3>
+        <h3 style="font-size:1.1rem;font-weight:700;color:#f1f5f9">Envoyer tous les mails</h3>
         <button class="modal-close-btn" id="sendAllCloseBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -261,11 +585,11 @@
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
           </div>
-          <p id="sendAllText" style="text-align:center;color:#475569;font-size:0.95rem;margin-top:0.75rem"></p>
+          <p id="sendAllText" style="text-align:center;color:#94A3B8;font-size:0.95rem;margin-top:0.75rem"></p>
         </div>
         <div id="sendAllProgress" style="display:none">
           <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
-          <p id="progressLabel" style="text-align:center;font-size:0.85rem;color:#64748b;margin-top:0.5rem"></p>
+          <p id="progressLabel" style="text-align:center;font-size:0.85rem;color:#94a3b8;margin-top:0.5rem"></p>
         </div>
       </div>
       <div class="modal-footer" id="sendAllFooter">
@@ -284,8 +608,89 @@
     </div>
   </div>
 
-  <!-- ⚠️ config.js doit être chargé EN PREMIER — contient window.API_BASE_URL -->
+  <!-- ═══════════════════════════════ MODALE CONFIGURATION CAMPAGNE ════════════════ -->
+  <div class="modal-overlay" id="campaignModalOverlay">
+    <div class="modal campaign-modal" id="campaignModal">
+      <!-- Header -->
+      <div class="campaign-header">
+          <div class="campaign-header-icon">
+            <img src="icone-outlook.png" alt="Campagne" style="width:100%;height:100%;object-fit:contain;" />
+          </div>
+        <div class="campaign-header-text">
+          <h3>Configuration du message</h3>
+          <p>Personnalisez votre email. Cliquez sur les variables pour les insérer dans votre texte.</p>
+        </div>
+        <button class="modal-close-btn" id="campaignModalCloseBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Barre des Variables (tags) -->
+      <div class="campaign-tags-section">
+        <span class="campaign-tags-label">Variables disponibles :</span>
+        <div class="campaign-tags-bar" id="campaignTagsBar">
+          <!-- Généré dynamiquement -->
+        </div>
+      </div>
+
+      <!-- Indicateur Email détecté -->
+      <div class="campaign-email-indicator" id="campaignEmailIndicator">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Colonne e-mail détectée automatiquement : <strong id="detectedEmailCol">—</strong></span>
+      </div>
+
+      <!-- Formulaire de rédaction -->
+      <div class="campaign-form">
+        <div class="campaign-form-group">
+          <label class="campaign-label" for="campaignNameColumn">Nom ou structure</label>
+          <select id="campaignNameColumn" class="campaign-select">
+            <option value="">— Colonne ignorée (Sans nom) —</option>
+          </select>
+          <p class="campaign-hint">Sélectionnez la colonne qui servira de nom dans les cartes. Laissez vide pour "Sans nom".</p>
+        </div>
+
+        <div class="campaign-form-group">
+          <label class="campaign-label" for="campaignSubject">Sujet</label>
+          <input type="text" id="campaignSubject" class="campaign-input" placeholder="Ex: Candidature spontanée — {{Poste}}" />
+        </div>
+
+        <div class="campaign-form-group">
+          <label class="campaign-label" for="campaignBody">Corps du message</label>
+          <textarea id="campaignBody" class="campaign-textarea" placeholder="Rédigez votre message ici... Utilisez les variables ci-dessus pour personnaliser chaque email."></textarea>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="campaign-footer">
+        <button class="btn-ghost" id="campaignCancelBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Annuler
+        </button>
+        <button class="btn-campaign-generate" id="campaignGenerateBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          Générer la campagne
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⚠️ Scripts chargés dans l'ordre -->
   <script src="config.js"></script>
+  <script src="digital-serenity.js"></script>
+  <script src="limelight-nav.js"></script>
+  <script src="glowing-shadow.js"></script>
   <script src="app.js"></script>
+  <script src="test-refonte.js"></script>
 </body>
 </html>
